@@ -55,7 +55,10 @@
           <button class="reset-btn" id="restart-game">Заново</button>
         </div>
 
-        <h2 class="title" id="game-title">Крестики-нолики</h2>
+        <div class="game-title-wrap">
+          <h2 class="title game-title-main">Крестики-нолики</h2>
+          <p class="game-title-sub" id="game-title">Обычный режим</p>
+        </div>
 
         <div class="info-panel hud-panel">
           <div class="hud-top">
@@ -84,8 +87,8 @@
           </div>
 
           <div class="hud-status">
-            <p class="hud-status-line" id="turn-text">Ход: X</p>
-            <p class="hud-status-line" id="result-text">Статус: Игра не началась</p>
+            <p class="hud-status-line turn-pill" id="turn-text">Ход: X</p>
+            <p class="hud-status-line result-pill" id="result-text">Статус: Игра не началась</p>
           </div>
 
           <div class="hud-stats">
@@ -104,6 +107,7 @@
           </div>
         </div>
 
+        <div class="game-toast" id="game-toast" role="status" aria-live="polite"></div>
         <div class="game-board" id="game-board" aria-label="Игровое поле 3 на 3"></div>
       </div>
     </section>

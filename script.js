@@ -40,6 +40,7 @@ const textFields = {
 };
 
 const boardElement = document.getElementById("game-board");
+const toastElement = document.getElementById("game-toast");
 
 const gameState = {
   playerMode: null, // single | friend
@@ -55,7 +56,8 @@ const gameState = {
     wins: 0,
     losses: 0,
     draws: 0
-  }
+  },
+  toastHideTimer: null
 };
 
 function showScreen(screenElement) {
@@ -84,19 +86,23 @@ function updateGameInfo() {
   textFields.gameTypeText.textContent = getGameTypeLabel(gameState.gameType);
 
   if (gameState.gameType === "classic") {
-    textFields.gameTitle.textContent = "Обычные крестики-нолики";
+    textFields.gameTitle.textContent = "Обычный режим";
   } else if (gameState.gameType === "super") {
-    textFields.gameTitle.textContent = "Супер крестики-нолики";
+    textFields.gameTitle.textContent = "Супер режим";
   } else {
-    textFields.gameTitle.textContent = "Крестики-нолики";
+    textFields.gameTitle.textContent = "Выбери режим";
   }
 
   if (isSingleClassicMode()) {
     textFields.playerSymbolText.textContent = gameState.playerSymbol;
     textFields.botSymbolText.textContent = gameState.botSymbol;
-    textFields.turnText.textContent = gameState.isGameOver
-      ? "Ход: партия завершена"
-      : `Ход: ${gameState.currentTurn}`;
+    if (gameState.isGameOver) {
+      textFields.turnText.textContent = "Ход: партия завершена";
+    } else if (gameState.currentTurn === gameState.botSymbol) {
+      textFields.turnText.textContent = "Ход: бот думает…";
+    } else {
+      textFields.turnText.textContent = `Ход: ${gameState.currentTurn} (твой)`;
+    }
   } else {
     textFields.playerSymbolText.textContent = "—";
     textFields.botSymbolText.textContent = "—";
@@ -166,7 +172,13 @@ function finishGame(result) {
   renderBoard();
 
   if (result.type === "win") {
-    textFields.resultText.textContent = `Результат: победил ${result.winner}`;
+    if (isSingleClassicMode() && result.winner === gameState.playerSymbol) {
+      textFields.resultText.textContent = "Статус: ты победил";
+    } else if (isSingleClassicMode() && result.winner === gameState.botSymbol) {
+      textFields.resultText.textContent = "Статус: победил бот";
+    } else {
+      textFields.resultText.textContent = `Статус: победил ${result.winner}`;
+    }
 
     if (isSingleClassicMode()) {
       if (result.winner === gameState.playerSymbol) {
@@ -176,13 +188,14 @@ function finishGame(result) {
       }
     }
   } else {
-    textFields.resultText.textContent = "Результат: ничья";
+    textFields.resultText.textContent = "Статус: ничья";
     if (isSingleClassicMode()) {
       gameState.stats.draws += 1;
     }
   }
 
   updateGameInfo();
+  showResultNotification(result);
 }
 
 function processRoundStateAfterMove() {
@@ -248,6 +261,7 @@ function botMove() {
     return;
   }
 
+  updateGameInfo();
   const bestMove = getBestBotMove(gameState.board);
   if (bestMove === null || bestMove === undefined) {
     return;
@@ -283,8 +297,10 @@ function setupClassicSingleRound() {
   gameState.startingPlayerToggle = gameState.startingPlayerToggle === "X" ? "O" : "X";
 
   textFields.resultText.textContent = "Статус: Игра продолжается";
+  hideGameToast();
   updateGameInfo();
   renderBoard();
+  showTurnNotification();
 
   if (gameState.currentTurn === gameState.botSymbol) {
     setTimeout(botMove, 250);
@@ -297,8 +313,64 @@ function setupUnsupportedModeRound() {
   gameState.isGameOver = true;
   gameState.winLine = null;
   textFields.resultText.textContent = "Статус: режим в разработке";
+  hideGameToast();
   updateGameInfo();
   renderBoard();
+}
+
+function hideGameToast() {
+  if (gameState.toastHideTimer) {
+    clearTimeout(gameState.toastHideTimer);
+    gameState.toastHideTimer = null;
+  }
+
+  toastElement.classList.remove("show", "toast-turn", "toast-win", "toast-loss", "toast-draw");
+  toastElement.textContent = "";
+}
+
+function showGameToast(message, type = "turn", autoHide = true) {
+  if (!toastElement) return;
+
+  if (gameState.toastHideTimer) {
+    clearTimeout(gameState.toastHideTimer);
+    gameState.toastHideTimer = null;
+  }
+
+  toastElement.textContent = message;
+  toastElement.classList.remove("toast-turn", "toast-win", "toast-loss", "toast-draw");
+  toastElement.classList.add("show", `toast-${type}`);
+
+  if (autoHide) {
+    gameState.toastHideTimer = setTimeout(() => {
+      toastElement.classList.remove("show");
+      gameState.toastHideTimer = null;
+    }, 1500);
+  }
+}
+
+function showTurnNotification() {
+  if (!isSingleClassicMode()) return;
+
+  if (gameState.currentTurn === gameState.playerSymbol) {
+    showGameToast("Твой ход", "turn", true);
+  } else {
+    showGameToast("Первым ходит бот", "turn", true);
+  }
+}
+
+function showResultNotification(result) {
+  if (result.type === "draw") {
+    showGameToast("Ничья. Игра завершена", "draw", false);
+    return;
+  }
+
+  if (isSingleClassicMode() && result.winner === gameState.playerSymbol) {
+    showGameToast("Ты победил! Игра завершена", "win", false);
+  } else if (isSingleClassicMode() && result.winner === gameState.botSymbol) {
+    showGameToast("Победил бот. Игра завершена", "loss", false);
+  } else {
+    showGameToast(`Победил ${result.winner}. Игра завершена`, "turn", false);
+  }
 }
 
 function startNewGame() {
@@ -327,10 +399,12 @@ buttons.gameButtons.forEach((button) => {
 });
 
 buttons.backToMain.addEventListener("click", () => {
+  hideGameToast();
   showScreen(screens.mainMenu);
 });
 
 buttons.backToTypes.addEventListener("click", () => {
+  hideGameToast();
   showScreen(screens.gameTypeMenu);
 });
 
