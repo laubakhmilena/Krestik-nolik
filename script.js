@@ -28,15 +28,10 @@ const buttons = {
 
 const textFields = {
   gameTitle: document.getElementById("game-title"),
-  playerModeText: document.getElementById("player-mode-text"),
-  gameTypeText: document.getElementById("game-type-text"),
-  playerSymbolText: document.getElementById("player-symbol-text"),
-  botSymbolText: document.getElementById("bot-symbol-text"),
+  playerScoreText: document.getElementById("player-score-text"),
+  botScoreText: document.getElementById("bot-score-text"),
   turnText: document.getElementById("turn-text"),
-  resultText: document.getElementById("result-text"),
-  winsCount: document.getElementById("wins-count"),
-  lossesCount: document.getElementById("losses-count"),
-  drawsCount: document.getElementById("draws-count")
+  resultText: document.getElementById("result-text")
 };
 
 const boardElement = document.getElementById("game-board");
@@ -52,10 +47,9 @@ const gameState = {
   botSymbol: "O",
   startingPlayerToggle: "X", // Человек чередуется X -> O между партиями
   winLine: null,
-  stats: {
-    wins: 0,
-    losses: 0,
-    draws: 0
+  score: {
+    player: 0,
+    bot: 0
   },
   toastHideTimer: null
 };
@@ -82,36 +76,23 @@ function isSingleClassicMode() {
 }
 
 function updateGameInfo() {
-  textFields.playerModeText.textContent = getPlayerModeLabel(gameState.playerMode);
-  textFields.gameTypeText.textContent = getGameTypeLabel(gameState.gameType);
-
-  if (gameState.gameType === "classic") {
-    textFields.gameTitle.textContent = "Обычный режим";
-  } else if (gameState.gameType === "super") {
-    textFields.gameTitle.textContent = "Супер режим";
-  } else {
-    textFields.gameTitle.textContent = "Выбери режим";
-  }
+  textFields.gameTitle.textContent = "Крестики-нолики";
 
   if (isSingleClassicMode()) {
-    textFields.playerSymbolText.textContent = gameState.playerSymbol;
-    textFields.botSymbolText.textContent = gameState.botSymbol;
+    textFields.playerScoreText.textContent = String(gameState.score.player);
+    textFields.botScoreText.textContent = String(gameState.score.bot);
     if (gameState.isGameOver) {
       textFields.turnText.textContent = "Ход: партия завершена";
     } else if (gameState.currentTurn === gameState.botSymbol) {
-      textFields.turnText.textContent = "Ход: бот думает…";
+      textFields.turnText.textContent = `Ход: ${gameState.currentTurn}`;
     } else {
       textFields.turnText.textContent = `Ход: ${gameState.currentTurn} (твой)`;
     }
   } else {
-    textFields.playerSymbolText.textContent = "—";
-    textFields.botSymbolText.textContent = "—";
+    textFields.playerScoreText.textContent = "0";
+    textFields.botScoreText.textContent = "0";
     textFields.turnText.textContent = `Ход: ${gameState.currentTurn}`;
   }
-
-  textFields.winsCount.textContent = String(gameState.stats.wins);
-  textFields.lossesCount.textContent = String(gameState.stats.losses);
-  textFields.drawsCount.textContent = String(gameState.stats.draws);
 }
 
 function renderBoard() {
@@ -172,25 +153,20 @@ function finishGame(result) {
   renderBoard();
 
   if (result.type === "win") {
-    if (isSingleClassicMode() && result.winner === gameState.playerSymbol) {
-      textFields.resultText.textContent = "Статус: ты победил";
-    } else if (isSingleClassicMode() && result.winner === gameState.botSymbol) {
-      textFields.resultText.textContent = "Статус: победил бот";
-    } else {
-      textFields.resultText.textContent = `Статус: победил ${result.winner}`;
-    }
+    textFields.resultText.textContent = "Статус: партия завершена";
 
     if (isSingleClassicMode()) {
       if (result.winner === gameState.playerSymbol) {
-        gameState.stats.wins += 1;
+        gameState.score.player += 1;
       } else if (result.winner === gameState.botSymbol) {
-        gameState.stats.losses += 1;
+        gameState.score.bot += 1;
       }
     }
   } else {
-    textFields.resultText.textContent = "Статус: ничья";
+    textFields.resultText.textContent = "Статус: партия завершена";
     if (isSingleClassicMode()) {
-      gameState.stats.draws += 1;
+      gameState.score.player += 1;
+      gameState.score.bot += 1;
     }
   }
 
@@ -365,11 +341,11 @@ function showResultNotification(result) {
   }
 
   if (isSingleClassicMode() && result.winner === gameState.playerSymbol) {
-    showGameToast("Ты победил! Игра завершена", "win", false);
+    showGameToast("Ты победил", "win", false);
   } else if (isSingleClassicMode() && result.winner === gameState.botSymbol) {
-    showGameToast("Победил бот. Игра завершена", "loss", false);
+    showGameToast("Победил бот", "loss", false);
   } else {
-    showGameToast(`Победил ${result.winner}. Игра завершена`, "turn", false);
+    showGameToast(`Победил ${result.winner}`, "turn", false);
   }
 }
 

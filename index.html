@@ -50,39 +50,20 @@
     <!-- Экран игры -->
     <section class="screen" id="game-screen">
       <div class="paper-card game-card">
-        <div class="top-bar">
-          <button class="back-btn" id="back-to-types">Назад</button>
-          <button class="reset-btn" id="restart-game">Заново</button>
-        </div>
-
-        <div class="game-title-wrap">
-          <h2 class="title game-title-main">Крестики-нолики</h2>
-          <p class="game-title-sub" id="game-title">Обычный режим</p>
-        </div>
+        <h2 class="title game-title-main" id="game-title">Крестики-нолики</h2>
 
         <div class="info-panel hud-panel">
-          <div class="hud-top">
-            <div class="hud-top-item">
-              <span class="hud-label">Режим</span>
-              <strong id="player-mode-text">—</strong>
-            </div>
-            <div class="hud-top-item">
-              <span class="hud-label">Тип игры</span>
-              <strong id="game-type-text">—</strong>
-            </div>
-          </div>
-
           <div class="hud-vs-zone">
             <article class="side-card player-card">
               <span class="side-role">Игрок</span>
-              <span class="side-symbol" id="player-symbol-text">—</span>
+              <span class="side-score" id="player-score-text">0</span>
             </article>
 
             <div class="vs-badge">VS</div>
 
             <article class="side-card bot-card">
               <span class="side-role">Бот</span>
-              <span class="side-symbol" id="bot-symbol-text">—</span>
+              <span class="side-score" id="bot-score-text">0</span>
             </article>
           </div>
 
@@ -90,25 +71,14 @@
             <p class="hud-status-line turn-pill" id="turn-text">Ход: X</p>
             <p class="hud-status-line result-pill" id="result-text">Статус: Игра не началась</p>
           </div>
-
-          <div class="hud-stats">
-            <div class="stat-item stat-win">
-              <span class="stat-label">Победы</span>
-              <strong class="stat-value" id="wins-count">0</strong>
-            </div>
-            <div class="stat-item stat-loss">
-              <span class="stat-label">Поражения</span>
-              <strong class="stat-value" id="losses-count">0</strong>
-            </div>
-            <div class="stat-item stat-draw">
-              <span class="stat-label">Ничьи</span>
-              <strong class="stat-value" id="draws-count">0</strong>
-            </div>
-          </div>
         </div>
 
         <div class="game-toast" id="game-toast" role="status" aria-live="polite"></div>
         <div class="game-board" id="game-board" aria-label="Игровое поле 3 на 3"></div>
+        <div class="top-bar bottom-bar">
+          <button class="back-btn" id="back-to-types">Назад</button>
+          <button class="reset-btn" id="restart-game">Заново</button>
+        </div>
       </div>
     </section>
 

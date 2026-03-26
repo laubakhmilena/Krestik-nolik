@@ -37,7 +37,12 @@ body {
     linear-gradient(135deg, #f8f3ea 0%, #f3ecdf 100%);
   color: var(--text-main);
   min-height: 100vh;
-  overflow-x: hidden;
+  min-height: 100dvh;
+  overflow: hidden;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  touch-action: manipulation;
 }
 
 /* Легкая бумажная фактура */
@@ -67,7 +72,8 @@ body::before {
 .app {
   width: 100%;
   min-height: 100vh;
-  padding: 16px;
+  min-height: 100dvh;
+  padding: 10px;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -76,19 +82,19 @@ body::before {
 .screen {
   display: none;
   width: 100%;
-  max-width: 520px;
+  max-width: 420px;
+  height: 100%;
 }
 
 .screen.active {
-  display: block;
-}
-
-#main-menu.active {
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: calc(100vh - 32px);
-  padding: 8px 0;
+}
+
+#main-menu.active {
+  min-height: calc(100dvh - 20px);
+  padding: 4px 0;
 }
 
 #main-menu .paper-card {
@@ -100,7 +106,7 @@ body::before {
   border: 1px solid var(--border);
   border-radius: var(--radius-xl);
   box-shadow: var(--shadow);
-  padding: 24px 16px;
+  padding: 18px 14px;
   text-align: center;
   position: relative;
 }
@@ -122,6 +128,7 @@ body::before {
 .subtitle,
 .menu-buttons,
 .top-bar,
+.bottom-bar,
 .info-panel,
 .game-board,
 .back-btn,
@@ -131,16 +138,16 @@ body::before {
 }
 
 .title {
-  font-size: 30px;
+  font-size: 27px;
   line-height: 1.2;
   margin-bottom: 10px;
   color: #5c4a3d;
 }
 
 .subtitle {
-  font-size: 16px;
+  font-size: 15px;
   color: var(--text-soft);
-  margin-bottom: 24px;
+  margin-bottom: 16px;
 }
 
 .menu-buttons {
@@ -154,8 +161,8 @@ body::before {
 .reset-btn {
   border: none;
   border-radius: var(--radius-md);
-  padding: 16px 20px;
-  font-size: 18px;
+  padding: 14px 16px;
+  font-size: 17px;
   font-weight: 600;
   cursor: pointer;
   transition: transform 0.15s ease, background 0.2s ease, box-shadow 0.2s ease;
@@ -180,7 +187,7 @@ body::before {
 }
 
 .back-btn {
-  margin-top: 18px;
+  margin-top: 14px;
   background: linear-gradient(180deg, #dcebdd 0%, #cfe2d1 100%);
   color: #314137;
   border: 1px solid #bdd0bf;
@@ -203,14 +210,24 @@ body::before {
 
 .game-card {
   text-align: left;
-  max-width: 430px;
+  max-width: 400px;
+  height: min(780px, calc(100dvh - 20px));
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  justify-content: flex-start;
+  padding: 12px;
 }
 
 .top-bar {
   display: flex;
   justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 10px;
+  gap: 8px;
+  margin-top: auto;
+}
+
+.bottom-bar {
+  margin-bottom: 0;
 }
 
 .top-bar .back-btn,
@@ -218,6 +235,9 @@ body::before {
   flex: 1;
   margin-top: 0;
   min-height: 48px;
+  margin-top: 0;
+  padding: 12px 12px;
+  font-size: 16px;
 }
 
 .top-bar .back-btn {
@@ -229,61 +249,25 @@ body::before {
   box-shadow: 0 4px 10px rgba(130, 95, 40, 0.16);
 }
 
-.game-title-wrap {
-  margin-bottom: 8px;
-}
-
 .game-title-main {
-  margin-bottom: 2px;
-}
-
-.game-title-sub {
-  font-size: 14px;
-  color: #837463;
-  font-weight: 600;
+  margin: 0;
+  text-align: center;
+  font-size: 24px;
 }
 
 .info-panel {
   background: linear-gradient(180deg, #fffaf1 0%, #f8f1e5 100%);
   border: 1px solid #e1d2bb;
   border-radius: var(--radius-lg);
-  padding: 12px;
-  margin-top: 8px;
-  margin-bottom: 12px;
+  padding: 8px;
+  margin-top: 0;
+  margin-bottom: 0;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.45);
 }
 
 .hud-panel {
   display: grid;
-  gap: 8px;
-}
-
-.hud-top {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
-}
-
-.hud-top-item {
-  background: linear-gradient(180deg, #fffef9 0%, #f8f0e4 100%);
-  border: 1px solid #e5d6bc;
-  border-radius: 12px;
-  padding: 10px 12px;
-  min-height: 58px;
-}
-
-.hud-label {
-  display: block;
-  font-size: 12px;
-  color: #8a7a69;
-  margin-bottom: 4px;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.hud-top-item strong {
-  color: #5b4a3e;
-  font-size: 13px;
+  gap: 7px;
 }
 
 .hud-vs-zone {
@@ -296,7 +280,7 @@ body::before {
 .side-card {
   border: 1px solid #dfcfb4;
   border-radius: 12px;
-  padding: 8px 8px;
+  padding: 8px 6px;
   text-align: center;
   background: #fffdf7;
 }
@@ -320,9 +304,9 @@ body::before {
   letter-spacing: 0.5px;
 }
 
-.side-symbol {
+.side-score {
   display: block;
-  font-size: 34px;
+  font-size: 28px;
   line-height: 1;
   font-weight: 700;
   color: #4c3b2d;
@@ -346,17 +330,17 @@ body::before {
   background: linear-gradient(180deg, #fffef9 0%, #f8f1e8 100%);
   border: 1px solid #e5d5bb;
   border-radius: 12px;
-  padding: 8px;
+  padding: 6px;
   display: grid;
   gap: 6px;
 }
 
 .hud-status-line {
-  font-size: 14px;
+  font-size: 13px;
   color: #4f4135;
   margin-bottom: 0;
   border-radius: 999px;
-  padding: 8px 10px;
+  padding: 7px 9px;
   border: 1px solid #e6dac7;
   background: #fffaf2;
   font-weight: 600;
@@ -372,53 +356,12 @@ body::before {
   color: #65503f;
 }
 
-.hud-stats {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 8px;
-}
-
-.stat-item {
-  border-radius: 12px;
-  border: 1px solid transparent;
-  padding: 7px;
-  text-align: center;
-}
-
-.stat-win {
-  background: linear-gradient(180deg, #ebf8ee 0%, #daefdf 100%);
-  border-color: #b9dcc3;
-}
-
-.stat-loss {
-  background: linear-gradient(180deg, #fff1f1 0%, #f6dfdf 100%);
-  border-color: #e1c1c1;
-}
-
-.stat-draw {
-  background: linear-gradient(180deg, #f4f1ff 0%, #e9e4fb 100%);
-  border-color: #d2c9ed;
-}
-
-.stat-label {
-  display: block;
-  color: #6f6254;
-  font-size: 12px;
-  margin-bottom: 3px;
-}
-
-.stat-value {
-  display: block;
-  font-size: 24px;
-  color: #46382e;
-}
-
 .game-board {
-  width: min(100%, 350px);
+  width: min(100%, 295px);
   margin: 0 auto;
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 9px;
+  gap: 7px;
   position: relative;
   z-index: 1;
 }
@@ -428,7 +371,7 @@ body::before {
   border: 1px solid #d5bf9f;
   border-radius: 14px;
   background: linear-gradient(180deg, #fff8e9 0%, #f2e4cd 100%);
-  font-size: clamp(34px, 8vw, 54px);
+  font-size: clamp(28px, 7vw, 44px);
   font-weight: 700;
   color: #4f3d30;
   cursor: pointer;
@@ -457,17 +400,17 @@ body::before {
 
 .game-toast {
   position: fixed;
-  top: 18px;
+  top: 50%;
   left: 50%;
-  transform: translate(-50%, -18px);
-  width: min(92vw, 360px);
-  padding: 12px 14px;
+  transform: translate(-50%, -50%);
+  width: min(80vw, 280px);
+  padding: 10px 12px;
   border-radius: 14px;
   border: 1px solid #dbcdb8;
   background: linear-gradient(180deg, #fffef9 0%, #f5ecdf 100%);
   color: #4f4032;
   text-align: center;
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 700;
   opacity: 0;
   pointer-events: none;
@@ -478,7 +421,7 @@ body::before {
 
 .game-toast.show {
   opacity: 1;
-  transform: translate(-50%, 0);
+  transform: translate(-50%, -50%);
 }
 
 .game-toast.toast-turn {
@@ -505,22 +448,21 @@ body::before {
 
 @media (max-width: 600px) {
   .app {
-    padding: 10px;
-    align-items: flex-start;
+    padding: 8px;
   }
 
   .paper-card {
-    padding: 18px 12px;
-    border-radius: 20px;
+    padding: 14px 10px;
+    border-radius: 18px;
   }
 
   #main-menu.active {
-    min-height: calc(100vh - 20px);
-    padding: 6px 0;
+    min-height: calc(100dvh - 16px);
+    padding: 4px 0;
   }
 
   .title {
-    font-size: 26px;
+    font-size: 23px;
   }
 
   .subtitle {
@@ -535,29 +477,17 @@ body::before {
     padding: 14px 14px;
   }
 
-  .hud-top-item {
-    min-height: 52px;
-  }
-
   .hud-status-line {
-    font-size: 14px;
-  }
-
-  .stat-label {
-    font-size: 11px;
-  }
-
-  .stat-value {
-    font-size: 20px;
+    font-size: 12px;
   }
 
   .game-board {
-    width: min(100%, 320px);
-    gap: 7px;
+    width: min(100%, 270px);
+    gap: 6px;
   }
 
-  .side-symbol {
-    font-size: 30px;
+  .side-score {
+    font-size: 24px;
   }
 
   .vs-badge {
@@ -566,8 +496,8 @@ body::before {
   }
 
   .game-toast {
-    top: 12px;
-    font-size: 14px;
-    padding: 11px 12px;
+    width: min(84vw, 260px);
+    font-size: 13px;
+    padding: 10px 10px;
   }
 }
