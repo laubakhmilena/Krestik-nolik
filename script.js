@@ -30,9 +30,13 @@ const textFields = {
   gameTitle: document.getElementById("game-title"),
   playerModeText: document.getElementById("player-mode-text"),
   gameTypeText: document.getElementById("game-type-text"),
-  symbolsText: document.getElementById("symbols-text"),
+  playerSymbolText: document.getElementById("player-symbol-text"),
+  botSymbolText: document.getElementById("bot-symbol-text"),
   turnText: document.getElementById("turn-text"),
-  resultText: document.getElementById("result-text")
+  resultText: document.getElementById("result-text"),
+  winsCount: document.getElementById("wins-count"),
+  lossesCount: document.getElementById("losses-count"),
+  drawsCount: document.getElementById("draws-count")
 };
 
 const boardElement = document.getElementById("game-board");
@@ -46,7 +50,12 @@ const gameState = {
   playerSymbol: "X",
   botSymbol: "O",
   startingPlayerToggle: "X", // Человек чередуется X -> O между партиями
-  winLine: null
+  winLine: null,
+  stats: {
+    wins: 0,
+    losses: 0,
+    draws: 0
+  }
 };
 
 function showScreen(screenElement) {
@@ -71,8 +80,8 @@ function isSingleClassicMode() {
 }
 
 function updateGameInfo() {
-  textFields.playerModeText.textContent = `Режим: ${getPlayerModeLabel(gameState.playerMode)}`;
-  textFields.gameTypeText.textContent = `Тип игры: ${getGameTypeLabel(gameState.gameType)}`;
+  textFields.playerModeText.textContent = getPlayerModeLabel(gameState.playerMode);
+  textFields.gameTypeText.textContent = getGameTypeLabel(gameState.gameType);
 
   if (gameState.gameType === "classic") {
     textFields.gameTitle.textContent = "Обычные крестики-нолики";
@@ -83,14 +92,20 @@ function updateGameInfo() {
   }
 
   if (isSingleClassicMode()) {
-    textFields.symbolsText.textContent = `Игрок: ${gameState.playerSymbol} | Бот: ${gameState.botSymbol}`;
+    textFields.playerSymbolText.textContent = gameState.playerSymbol;
+    textFields.botSymbolText.textContent = gameState.botSymbol;
     textFields.turnText.textContent = gameState.isGameOver
       ? "Ход: партия завершена"
       : `Ход: ${gameState.currentTurn}`;
   } else {
-    textFields.symbolsText.textContent = "Игрок: — | Бот: —";
+    textFields.playerSymbolText.textContent = "—";
+    textFields.botSymbolText.textContent = "—";
     textFields.turnText.textContent = `Ход: ${gameState.currentTurn}`;
   }
+
+  textFields.winsCount.textContent = String(gameState.stats.wins);
+  textFields.lossesCount.textContent = String(gameState.stats.losses);
+  textFields.drawsCount.textContent = String(gameState.stats.draws);
 }
 
 function renderBoard() {
@@ -152,8 +167,19 @@ function finishGame(result) {
 
   if (result.type === "win") {
     textFields.resultText.textContent = `Результат: победил ${result.winner}`;
+
+    if (isSingleClassicMode()) {
+      if (result.winner === gameState.playerSymbol) {
+        gameState.stats.wins += 1;
+      } else if (result.winner === gameState.botSymbol) {
+        gameState.stats.losses += 1;
+      }
+    }
   } else {
     textFields.resultText.textContent = "Результат: ничья";
+    if (isSingleClassicMode()) {
+      gameState.stats.draws += 1;
+    }
   }
 
   updateGameInfo();
