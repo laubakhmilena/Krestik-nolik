@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Крестики-нолики</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="app">
+
+    <!-- Главное меню -->
+    <section class="screen active" id="main-menu">
+      <div class="paper-card">
+        <h1 class="title">Крестики-нолики</h1>
+        <p class="subtitle">Выбери, как хочешь играть</p>
+
+        <div class="menu-buttons">
+          <button class="menu-btn" data-mode="single">
+            Играть с ботом
+          </button>
+          <button class="menu-btn" data-mode="friend">
+            Играть с другом
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Выбор режима -->
+    <section class="screen" id="game-type-menu">
+      <div class="paper-card">
+        <h2 class="title">Выбор режима</h2>
+        <p class="subtitle">Выбери вариант игры</p>
+
+        <div class="menu-buttons">
+          <button class="menu-btn" data-game="classic">
+            Обычные крестики-нолики
+          </button>
+          <button class="menu-btn" data-game="super">
+            Супер крестики-нолики
+          </button>
+        </div>
+
+        <button class="back-btn" id="back-to-main">
+          Назад
+        </button>
+      </div>
+    </section>
+
+    <!-- Экран игры -->
+    <section class="screen" id="game-screen">
+      <div class="paper-card game-card">
+        <div class="top-bar">
+          <button class="back-btn" id="back-to-types">Назад</button>
+          <button class="reset-btn" id="restart-game">Заново</button>
+        </div>
+
+        <h2 class="title" id="game-title">Крестики-нолики</h2>
+
+        <div class="info-panel">
+          <p id="player-mode-text">Режим: —</p>
+          <p id="game-type-text">Тип игры: —</p>
+          <p id="turn-text">Ход: X</p>
+        </div>
+
+        <!-- Сюда позже вставим поле игры -->
+        <div class="game-board-placeholder">
+          <p>Здесь будет игровое поле</p>
+        </div>
+      </div>
+    </section>
+
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
