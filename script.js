@@ -51,7 +51,8 @@ const gameState = {
     player: 0,
     bot: 0
   },
-  toastHideTimer: null
+  toastHideTimer: null,
+  botMoveTimer: null
 };
 
 function showScreen(screenElement) {
@@ -247,6 +248,24 @@ function botMove() {
   processRoundStateAfterMove();
 }
 
+function scheduleBotMove(delay = 250) {
+  if (gameState.botMoveTimer) {
+    clearTimeout(gameState.botMoveTimer);
+  }
+
+  gameState.botMoveTimer = setTimeout(() => {
+    gameState.botMoveTimer = null;
+    botMove();
+  }, delay);
+}
+
+function clearBotMoveTimer() {
+  if (gameState.botMoveTimer) {
+    clearTimeout(gameState.botMoveTimer);
+    gameState.botMoveTimer = null;
+  }
+}
+
 function handlePlayerMove(index) {
   if (!isSingleClassicMode() || gameState.isGameOver || gameState.currentTurn !== gameState.playerSymbol) {
     return;
@@ -257,11 +276,29 @@ function handlePlayerMove(index) {
 
   const isFinished = processRoundStateAfterMove();
   if (!isFinished) {
-    setTimeout(botMove, 250);
+    scheduleBotMove();
   }
 }
 
+function resetSessionScoreAndRound() {
+  gameState.score.player = 0;
+  gameState.score.bot = 0;
+  gameState.board = Array(9).fill(null);
+  gameState.currentTurn = "X";
+  gameState.isGameOver = false;
+  gameState.winLine = null;
+  gameState.playerSymbol = "X";
+  gameState.botSymbol = "O";
+  gameState.startingPlayerToggle = "X";
+  textFields.resultText.textContent = "Статус: Игра продолжается";
+  clearBotMoveTimer();
+  hideGameToast();
+  updateGameInfo();
+  renderBoard();
+}
+
 function setupClassicSingleRound() {
+  clearBotMoveTimer();
   gameState.board = Array(9).fill(null);
   gameState.isGameOver = false;
   gameState.winLine = null;
@@ -279,11 +316,12 @@ function setupClassicSingleRound() {
   showTurnNotification();
 
   if (gameState.currentTurn === gameState.botSymbol) {
-    setTimeout(botMove, 250);
+    scheduleBotMove();
   }
 }
 
 function setupUnsupportedModeRound() {
+  clearBotMoveTimer();
   gameState.board = Array(9).fill(null);
   gameState.currentTurn = "X";
   gameState.isGameOver = true;
@@ -380,7 +418,7 @@ buttons.backToMain.addEventListener("click", () => {
 });
 
 buttons.backToTypes.addEventListener("click", () => {
-  hideGameToast();
+  resetSessionScoreAndRound();
   showScreen(screens.gameTypeMenu);
 });
 

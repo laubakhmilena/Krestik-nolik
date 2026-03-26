@@ -214,7 +214,7 @@ body::before {
   height: min(780px, calc(100dvh - 20px));
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
   justify-content: flex-start;
   padding: 12px;
 }
@@ -223,7 +223,7 @@ body::before {
   display: flex;
   justify-content: space-between;
   gap: 8px;
-  margin-top: auto;
+  margin-top: 6px;
 }
 
 .bottom-bar {
@@ -235,7 +235,6 @@ body::before {
   flex: 1;
   margin-top: 0;
   min-height: 48px;
-  margin-top: 0;
   padding: 12px 12px;
   font-size: 16px;
 }
