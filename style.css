@@ -83,6 +83,18 @@ body::before {
   display: block;
 }
 
+#main-menu.active {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: calc(100vh - 32px);
+  padding: 8px 0;
+}
+
+#main-menu .paper-card {
+  width: 100%;
+}
+
 .paper-card {
   background: linear-gradient(180deg, var(--bg-paper) 0%, var(--bg-paper-2) 100%);
   border: 1px solid var(--border);
@@ -500,6 +512,11 @@ body::before {
   .paper-card {
     padding: 18px 12px;
     border-radius: 20px;
+  }
+
+  #main-menu.active {
+    min-height: calc(100vh - 20px);
+    padding: 6px 0;
   }
 
   .title {
