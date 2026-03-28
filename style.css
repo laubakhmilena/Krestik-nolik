@@ -73,7 +73,7 @@ body::before {
   width: 100%;
   min-height: 100vh;
   min-height: 100dvh;
-  padding: 10px;
+  padding: 8px;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -83,22 +83,32 @@ body::before {
   display: none;
   width: 100%;
   max-width: 420px;
-  height: 100%;
+  min-height: calc(100dvh - 16px);
 }
 
 .screen.active {
   display: flex;
-  align-items: center;
+  align-items: stretch;
   justify-content: center;
 }
 
-#main-menu.active {
-  min-height: calc(100dvh - 20px);
-  padding: 4px 0;
+#main-menu.active,
+#game-type-menu.active,
+#game-screen.active {
+  min-height: calc(100dvh - 16px);
+  padding: 0;
 }
 
-#main-menu .paper-card {
+#main-menu .paper-card,
+#game-type-menu .paper-card {
   width: 100%;
+  min-height: calc(100dvh - 16px);
+  height: calc(100dvh - 16px);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 12px;
+  padding: 18px 14px;
 }
 
 .paper-card {
@@ -147,13 +157,13 @@ body::before {
 .subtitle {
   font-size: 15px;
   color: var(--text-soft);
-  margin-bottom: 16px;
+  margin-bottom: 10px;
 }
 
 .menu-buttons {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 10px;
 }
 
 .menu-btn,
@@ -187,7 +197,7 @@ body::before {
 }
 
 .back-btn {
-  margin-top: 14px;
+  margin-top: 10px;
   background: linear-gradient(180deg, #dcebdd 0%, #cfe2d1 100%);
   color: #314137;
   border: 1px solid #bdd0bf;
@@ -198,7 +208,7 @@ body::before {
 }
 
 .reset-btn {
-  margin-top: 18px;
+  margin-top: 10px;
   background: linear-gradient(180deg, #f3e3bf 0%, #e9d29f 100%);
   color: #4e3d1f;
   border: 1px solid #d8bc7c;
@@ -210,24 +220,26 @@ body::before {
 
 .game-card {
   text-align: left;
-  max-width: 400px;
-  height: min(780px, calc(100dvh - 20px));
+  width: 100%;
+  max-width: 420px;
+  min-height: calc(100dvh - 16px);
+  height: calc(100dvh - 16px);
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  justify-content: flex-start;
-  padding: 12px;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 12px 11px 10px;
 }
 
 .top-bar {
   display: flex;
   justify-content: space-between;
   gap: 8px;
-  margin-top: 6px;
+  margin-top: 0;
 }
 
 .bottom-bar {
-  margin-bottom: 0;
+  margin: 0;
 }
 
 .top-bar .back-btn,
@@ -258,7 +270,7 @@ body::before {
   background: linear-gradient(180deg, #fffaf1 0%, #f8f1e5 100%);
   border: 1px solid #e1d2bb;
   border-radius: var(--radius-lg);
-  padding: 8px;
+  padding: 7px;
   margin-top: 0;
   margin-bottom: 0;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.45);
@@ -356,11 +368,12 @@ body::before {
 }
 
 .game-board {
-  width: min(100%, 295px);
-  margin: 0 auto;
+  width: min(100%, 320px);
+  margin: auto;
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 7px;
+  align-self: center;
   position: relative;
   z-index: 1;
 }
@@ -455,9 +468,11 @@ body::before {
     border-radius: 18px;
   }
 
-  #main-menu.active {
+  #main-menu .paper-card,
+  #game-type-menu .paper-card,
+  .game-card {
     min-height: calc(100dvh - 16px);
-    padding: 4px 0;
+    height: calc(100dvh - 16px);
   }
 
   .title {
@@ -465,8 +480,8 @@ body::before {
   }
 
   .subtitle {
-    font-size: 15px;
-    margin-bottom: 20px;
+    font-size: 14px;
+    margin-bottom: 8px;
   }
 
   .menu-btn,
@@ -481,8 +496,9 @@ body::before {
   }
 
   .game-board {
-    width: min(100%, 270px);
-    gap: 6px;
+    width: min(100%, 310px);
+    gap: 7px;
+    margin: auto;
   }
 
   .side-score {
@@ -498,5 +514,14 @@ body::before {
     width: min(84vw, 260px);
     font-size: 13px;
     padding: 10px 10px;
+  }
+
+  .game-card {
+    gap: 8px;
+    padding: 11px 10px 9px;
+  }
+
+  .top-bar.bottom-bar {
+    gap: 8px;
   }
 }
