@@ -7,17 +7,45 @@
     <link rel="stylesheet" href="style.css" />
   </head>
   <body>
-    <main>
-      <section class="start-screen" id="startScreen">
-        <h1 class="title">Крестики-нолики</h1>
-        <button class="start-btn" id="startBtn">Начать играть</button>
+    <main class="app-shell">
+      <section class="screen start-screen" id="startScreen" aria-labelledby="startTitle">
+        <span class="shape shape-x" aria-hidden="true">✕</span>
+        <span class="shape shape-o" aria-hidden="true">◯</span>
+
+        <div class="content">
+          <p class="eyebrow">Классическая игра для двоих</p>
+          <h1 class="title" id="startTitle">Крестики-нолики</h1>
+          <p class="subtitle">
+            Выбирайте режим и начинайте весёлую партию в обновлённом ярком интерфейсе.
+          </p>
+
+          <button class="btn btn-primary cta-btn" id="startBtn" type="button">
+            Начать играть
+          </button>
+        </div>
       </section>
 
-      <section class="menu-screen hidden" id="menuScreen">
-        <h2 class="game-title">Выберите режим</h2>
-        <button class="mode-btn">Игра с другом</button>
-        <button class="mode-btn">Игра с ботом</button>
-        <button class="back-btn" id="backBtn">Назад</button>
+      <section class="screen menu-screen hidden" id="menuScreen" aria-labelledby="menuTitle">
+        <span class="shape shape-x second" aria-hidden="true">✕</span>
+        <span class="shape shape-o second" aria-hidden="true">◯</span>
+
+        <div class="content">
+          <h2 class="title menu-title" id="menuTitle">Выберите режим игры</h2>
+
+          <div class="mode-grid">
+            <button class="mode-card" type="button">
+              <span class="mode-card-title">Игра с другом</span>
+              <span class="mode-card-text">Играть вдвоём на одном устройстве</span>
+            </button>
+
+            <button class="mode-card" type="button">
+              <span class="mode-card-title">Игра с ботом</span>
+              <span class="mode-card-text">Сразиться против компьютера</span>
+            </button>
+          </div>
+
+          <button class="btn btn-secondary back-btn" id="backBtn" type="button">Назад</button>
+        </div>
       </section>
     </main>
 
