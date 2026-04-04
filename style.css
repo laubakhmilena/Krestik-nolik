@@ -315,6 +315,26 @@ body {
   cursor: default;
 }
 
+
+.cell.winner-cell {
+  background: linear-gradient(140deg, rgba(255, 240, 176, 0.95) 0%, rgba(255, 220, 143, 0.9) 100%);
+  border-color: rgba(255, 186, 78, 0.92);
+  color: #2b1e6f;
+  box-shadow: 0 0 0 2px rgba(255, 199, 96, 0.45), 0 14px 28px rgba(184, 132, 40, 0.3);
+  animation: winner-pop 320ms ease-out;
+}
+
+@keyframes winner-pop {
+  0% {
+    transform: scale(0.92);
+    filter: brightness(0.95);
+  }
+  100% {
+    transform: scale(1);
+    filter: brightness(1);
+  }
+}
+
 .game-actions {
   margin-top: 2px;
   display: grid;

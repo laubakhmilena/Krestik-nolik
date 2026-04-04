@@ -28,6 +28,7 @@ const winningLines = [
 let boardState = Array(9).fill("");
 let currentPlayer = "X";
 let isGameFinished = false;
+let winningLine = null;
 let scoreX = 0;
 let scoreO = 0;
 let scoreDraws = 0;
@@ -84,6 +85,21 @@ function updateStatus(message) {
   }
 }
 
+function highlightWinnerCells(line) {
+  if (!board || !Array.isArray(line)) {
+    return;
+  }
+
+  const cells = board.querySelectorAll(".cell");
+  line.forEach((index) => {
+    const cell = cells[index];
+
+    if (cell) {
+      cell.classList.add("winner-cell");
+    }
+  });
+}
+
 function lockBoard() {
   if (!board) {
     return;
@@ -99,6 +115,7 @@ function resetGame() {
   boardState = Array(9).fill("");
   currentPlayer = "X";
   isGameFinished = false;
+  winningLine = null;
 
   if (!board) {
     return;
@@ -108,16 +125,26 @@ function resetGame() {
   cells.forEach((cell) => {
     cell.textContent = "";
     cell.disabled = false;
+    cell.classList.remove("winner-cell");
   });
 
   updateStatus("Ход: X");
 }
 
 function checkWinner() {
-  return winningLines.find((line) => {
-    const [a, b, c] = line;
+  const line = winningLines.find((combination) => {
+    const [a, b, c] = combination;
     return boardState[a] && boardState[a] === boardState[b] && boardState[b] === boardState[c];
   });
+
+  if (!line) {
+    return null;
+  }
+
+  return {
+    winner: boardState[line[0]],
+    line,
+  };
 }
 
 function handleCellClick(event) {
@@ -136,18 +163,20 @@ function handleCellClick(event) {
   boardState[index] = currentPlayer;
   target.textContent = currentPlayer;
 
-  const winnerLine = checkWinner();
-  if (winnerLine) {
+  const winnerResult = checkWinner();
+  if (winnerResult) {
     isGameFinished = true;
+    winningLine = winnerResult.line;
 
-    if (currentPlayer === "X") {
+    if (winnerResult.winner === "X") {
       scoreX += 1;
     } else {
       scoreO += 1;
     }
 
     updateScores();
-    updateStatus(`Победил ${currentPlayer}`);
+    updateStatus(`Победил ${winnerResult.winner}`);
+    highlightWinnerCells(winningLine);
     lockBoard();
     return;
   }
