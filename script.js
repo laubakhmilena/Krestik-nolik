@@ -6,8 +6,13 @@ const friendModeBtn = document.getElementById("friendModeBtn");
 const friendGameScreen = document.getElementById("friendGameScreen");
 const board = document.getElementById("board");
 const statusText = document.getElementById("statusText");
+const statusPanel = document.getElementById("statusPanel");
+const scoreXText = document.getElementById("scoreX");
+const scoreOText = document.getElementById("scoreO");
+const scoreDrawsText = document.getElementById("scoreDraws");
 const restartBtn = document.getElementById("restartBtn");
 const backToMenuBtn = document.getElementById("backToMenuBtn");
+const resetScoreBtn = document.getElementById("resetScoreBtn");
 
 const winningLines = [
   [0, 1, 2],
@@ -23,6 +28,10 @@ const winningLines = [
 let boardState = Array(9).fill("");
 let currentPlayer = "X";
 let isGameFinished = false;
+let winningLine = null;
+let scoreX = 0;
+let scoreO = 0;
+let scoreDraws = 0;
 
 function showScreen(screenToShow) {
   const screens = [startScreen, menuScreen, friendGameScreen];
@@ -36,10 +45,59 @@ function showScreen(screenToShow) {
   });
 }
 
-function updateStatus(message) {
-  if (statusText) {
-    statusText.textContent = message;
+function updateScores() {
+  if (scoreXText) {
+    scoreXText.textContent = String(scoreX);
   }
+
+  if (scoreOText) {
+    scoreOText.textContent = String(scoreO);
+  }
+
+  if (scoreDrawsText) {
+    scoreDrawsText.textContent = String(scoreDraws);
+  }
+}
+
+function resetScores() {
+  scoreX = 0;
+  scoreO = 0;
+  scoreDraws = 0;
+  updateScores();
+}
+
+function updateStatus(message) {
+  if (!statusText) {
+    return;
+  }
+
+  statusText.textContent = message;
+
+  if (statusPanel) {
+    const isWin = message.startsWith("Победил");
+    const isDraw = message === "Ничья";
+
+    statusPanel.dataset.state = isWin ? "win" : isDraw ? "draw" : "turn";
+  }
+
+  if (restartBtn) {
+    restartBtn.classList.toggle("game-over", message.startsWith("Победил") || message === "Ничья");
+  }
+}
+
+function highlightWinnerCells(line) {
+  if (!board || !Array.isArray(line)) {
+    return;
+  }
+
+  const cells = board.querySelectorAll(".cell");
+  line.forEach((index) => {
+    const cell = cells[index];
+
+    if (cell) {
+      cell.classList.add("winner-cell");
+    }
+  });
 }
 
 function lockBoard() {
@@ -57,6 +115,7 @@ function resetGame() {
   boardState = Array(9).fill("");
   currentPlayer = "X";
   isGameFinished = false;
+  winningLine = null;
 
   if (!board) {
     return;
@@ -66,16 +125,26 @@ function resetGame() {
   cells.forEach((cell) => {
     cell.textContent = "";
     cell.disabled = false;
+    cell.classList.remove("winner-cell");
   });
 
   updateStatus("Ход: X");
 }
 
 function checkWinner() {
-  return winningLines.find((line) => {
-    const [a, b, c] = line;
+  const line = winningLines.find((combination) => {
+    const [a, b, c] = combination;
     return boardState[a] && boardState[a] === boardState[b] && boardState[b] === boardState[c];
   });
+
+  if (!line) {
+    return null;
+  }
+
+  return {
+    winner: boardState[line[0]],
+    line,
+  };
 }
 
 function handleCellClick(event) {
@@ -94,10 +163,20 @@ function handleCellClick(event) {
   boardState[index] = currentPlayer;
   target.textContent = currentPlayer;
 
-  const winnerLine = checkWinner();
-  if (winnerLine) {
+  const winnerResult = checkWinner();
+  if (winnerResult) {
     isGameFinished = true;
-    updateStatus(`Победил ${currentPlayer}`);
+    winningLine = winnerResult.line;
+
+    if (winnerResult.winner === "X") {
+      scoreX += 1;
+    } else {
+      scoreO += 1;
+    }
+
+    updateScores();
+    updateStatus(`Победил ${winnerResult.winner}`);
+    highlightWinnerCells(winningLine);
     lockBoard();
     return;
   }
@@ -105,6 +184,8 @@ function handleCellClick(event) {
   const isDraw = boardState.every((cell) => cell !== "");
   if (isDraw) {
     isGameFinished = true;
+    scoreDraws += 1;
+    updateScores();
     updateStatus("Ничья");
     lockBoard();
     return;
@@ -141,6 +222,12 @@ if (restartBtn) {
   restartBtn.addEventListener("click", resetGame);
 }
 
+if (resetScoreBtn) {
+  resetScoreBtn.addEventListener("click", resetScores);
+}
+
 if (board) {
   board.addEventListener("click", handleCellClick);
 }
+
+updateScores();
