@@ -33,7 +33,7 @@
           <h2 class="title menu-title" id="menuTitle">Выберите режим игры</h2>
 
           <div class="mode-grid">
-            <button class="mode-card" type="button">
+            <button class="mode-card" id="friendModeBtn" type="button">
               <span class="mode-card-title">Игра с другом</span>
               <span class="mode-card-text">Играть вдвоём на одном устройстве</span>
             </button>
@@ -45,6 +45,37 @@
           </div>
 
           <button class="btn btn-secondary back-btn" id="backBtn" type="button">Назад</button>
+        </div>
+      </section>
+
+      <section
+        class="screen friend-game-screen hidden"
+        id="friendGameScreen"
+        aria-labelledby="friendGameTitle"
+      >
+        <span class="shape shape-x second" aria-hidden="true">✕</span>
+        <span class="shape shape-o second" aria-hidden="true">◯</span>
+
+        <div class="content friend-game-content">
+          <h2 class="title game-title" id="friendGameTitle">Игра с другом</h2>
+          <p class="game-status" id="statusText">Ход: X</p>
+
+          <div class="board" id="board" role="grid" aria-label="Поле крестиков-ноликов">
+            <button class="cell" type="button" data-index="0" aria-label="Клетка 1"></button>
+            <button class="cell" type="button" data-index="1" aria-label="Клетка 2"></button>
+            <button class="cell" type="button" data-index="2" aria-label="Клетка 3"></button>
+            <button class="cell" type="button" data-index="3" aria-label="Клетка 4"></button>
+            <button class="cell" type="button" data-index="4" aria-label="Клетка 5"></button>
+            <button class="cell" type="button" data-index="5" aria-label="Клетка 6"></button>
+            <button class="cell" type="button" data-index="6" aria-label="Клетка 7"></button>
+            <button class="cell" type="button" data-index="7" aria-label="Клетка 8"></button>
+            <button class="cell" type="button" data-index="8" aria-label="Клетка 9"></button>
+          </div>
+
+          <div class="game-actions">
+            <button class="btn btn-primary restart-btn" id="restartBtn" type="button">Играть снова</button>
+            <button class="btn btn-secondary" id="backToMenuBtn" type="button">Назад в меню</button>
+          </div>
         </div>
       </section>
     </main>
