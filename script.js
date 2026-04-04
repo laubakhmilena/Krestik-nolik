@@ -6,6 +6,7 @@ const friendModeBtn = document.getElementById("friendModeBtn");
 const friendGameScreen = document.getElementById("friendGameScreen");
 const board = document.getElementById("board");
 const statusText = document.getElementById("statusText");
+const statusPanel = document.getElementById("statusPanel");
 const restartBtn = document.getElementById("restartBtn");
 const backToMenuBtn = document.getElementById("backToMenuBtn");
 
@@ -37,8 +38,21 @@ function showScreen(screenToShow) {
 }
 
 function updateStatus(message) {
-  if (statusText) {
-    statusText.textContent = message;
+  if (!statusText) {
+    return;
+  }
+
+  statusText.textContent = message;
+
+  if (statusPanel) {
+    const isWin = message.startsWith("Победил");
+    const isDraw = message === "Ничья";
+
+    statusPanel.dataset.state = isWin ? "win" : isDraw ? "draw" : "turn";
+  }
+
+  if (restartBtn) {
+    restartBtn.classList.toggle("game-over", message.startsWith("Победил") || message === "Ничья");
   }
 }
 
