@@ -7,8 +7,12 @@ const friendGameScreen = document.getElementById("friendGameScreen");
 const board = document.getElementById("board");
 const statusText = document.getElementById("statusText");
 const statusPanel = document.getElementById("statusPanel");
+const scoreXText = document.getElementById("scoreX");
+const scoreOText = document.getElementById("scoreO");
+const scoreDrawsText = document.getElementById("scoreDraws");
 const restartBtn = document.getElementById("restartBtn");
 const backToMenuBtn = document.getElementById("backToMenuBtn");
+const resetScoreBtn = document.getElementById("resetScoreBtn");
 
 const winningLines = [
   [0, 1, 2],
@@ -24,6 +28,9 @@ const winningLines = [
 let boardState = Array(9).fill("");
 let currentPlayer = "X";
 let isGameFinished = false;
+let scoreX = 0;
+let scoreO = 0;
+let scoreDraws = 0;
 
 function showScreen(screenToShow) {
   const screens = [startScreen, menuScreen, friendGameScreen];
@@ -35,6 +42,27 @@ function showScreen(screenToShow) {
 
     screen.classList.toggle("hidden", screen !== screenToShow);
   });
+}
+
+function updateScores() {
+  if (scoreXText) {
+    scoreXText.textContent = String(scoreX);
+  }
+
+  if (scoreOText) {
+    scoreOText.textContent = String(scoreO);
+  }
+
+  if (scoreDrawsText) {
+    scoreDrawsText.textContent = String(scoreDraws);
+  }
+}
+
+function resetScores() {
+  scoreX = 0;
+  scoreO = 0;
+  scoreDraws = 0;
+  updateScores();
 }
 
 function updateStatus(message) {
@@ -111,6 +139,14 @@ function handleCellClick(event) {
   const winnerLine = checkWinner();
   if (winnerLine) {
     isGameFinished = true;
+
+    if (currentPlayer === "X") {
+      scoreX += 1;
+    } else {
+      scoreO += 1;
+    }
+
+    updateScores();
     updateStatus(`Победил ${currentPlayer}`);
     lockBoard();
     return;
@@ -119,6 +155,8 @@ function handleCellClick(event) {
   const isDraw = boardState.every((cell) => cell !== "");
   if (isDraw) {
     isGameFinished = true;
+    scoreDraws += 1;
+    updateScores();
     updateStatus("Ничья");
     lockBoard();
     return;
@@ -155,6 +193,12 @@ if (restartBtn) {
   restartBtn.addEventListener("click", resetGame);
 }
 
+if (resetScoreBtn) {
+  resetScoreBtn.addEventListener("click", resetScores);
+}
+
 if (board) {
   board.addEventListener("click", handleCellClick);
 }
+
+updateScores();

@@ -243,6 +243,41 @@ body {
   border-color: rgba(120, 151, 236, 0.58);
 }
 
+.score-board {
+  width: min(100%, 440px);
+  margin: 0 auto;
+  padding: 9px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.62);
+  background: rgba(255, 255, 255, 0.58);
+  box-shadow: 0 7px 18px rgba(58, 51, 128, 0.14);
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.score-item {
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.72);
+  padding: 8px 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.score-label {
+  font-size: clamp(12px, 2.1vw, 14px);
+  font-weight: 700;
+  color: rgba(44, 36, 109, 0.78);
+}
+
+.score-value {
+  font-size: clamp(22px, 3.7vw, 30px);
+  font-weight: 900;
+  color: #211b74;
+  line-height: 1;
+}
+
 .board {
   width: min(100%, 440px);
   margin: 0 auto;
@@ -283,16 +318,16 @@ body {
 .game-actions {
   margin-top: 2px;
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 10px;
 }
 
 .game-actions .btn {
   width: 100%;
   min-height: 48px;
-  padding: 12px 16px;
+  padding: 12px 14px;
   border-radius: 13px;
-  font-size: clamp(15px, 2.2vw, 18px);
+  font-size: clamp(14px, 2vw, 17px);
   font-weight: 700;
 }
 
@@ -307,14 +342,16 @@ body {
   filter: saturate(1.08);
 }
 
-.menu-btn {
+.menu-btn,
+.score-reset-btn {
   color: #2a246f;
   background: rgba(255, 255, 255, 0.72);
   border: 1px solid rgba(93, 107, 202, 0.36);
   box-shadow: 0 7px 16px rgba(65, 80, 155, 0.15);
 }
 
-.menu-btn:hover {
+.menu-btn:hover,
+.score-reset-btn:hover {
   background: rgba(255, 255, 255, 0.86);
   transform: translateY(-1px);
 }
@@ -366,6 +403,15 @@ body {
     padding-top: 0;
   }
 
+  .score-board {
+    gap: 6px;
+    padding: 7px;
+  }
+
+  .score-item {
+    padding: 7px 5px;
+  }
+
   .game-actions {
     grid-template-columns: 1fr;
     gap: 8px;
@@ -373,6 +419,7 @@ body {
 
   .game-actions .btn {
     min-height: 46px;
+    font-size: 16px;
   }
 
   .shape-x {

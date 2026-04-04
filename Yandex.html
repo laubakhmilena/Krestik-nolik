@@ -64,6 +64,21 @@
             <p class="game-status" id="statusText">Ход: X</p>
           </div>
 
+          <div class="score-board" id="scoreBoard" aria-label="Счёт матчей">
+            <div class="score-item">
+              <span class="score-label">X</span>
+              <span class="score-value" id="scoreX">0</span>
+            </div>
+            <div class="score-item">
+              <span class="score-label">O</span>
+              <span class="score-value" id="scoreO">0</span>
+            </div>
+            <div class="score-item">
+              <span class="score-label">Ничьи</span>
+              <span class="score-value" id="scoreDraws">0</span>
+            </div>
+          </div>
+
           <div class="board" id="board" role="grid" aria-label="Поле крестиков-ноликов">
             <button class="cell" type="button" data-index="0" aria-label="Клетка 1"></button>
             <button class="cell" type="button" data-index="1" aria-label="Клетка 2"></button>
@@ -80,6 +95,9 @@
             <button class="btn btn-primary restart-btn" id="restartBtn" type="button">Играть снова</button>
             <button class="btn btn-secondary menu-btn" id="backToMenuBtn" type="button">
               Назад в меню
+            </button>
+            <button class="btn btn-secondary score-reset-btn" id="resetScoreBtn" type="button">
+              Сбросить счёт
             </button>
           </div>
         </div>
