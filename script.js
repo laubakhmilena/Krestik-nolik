@@ -33,6 +33,31 @@ let scoreX = 0;
 let scoreO = 0;
 let scoreDraws = 0;
 
+
+function focusScreenPrimaryAction(screen) {
+  if (!screen) {
+    return;
+  }
+
+  const actionSelectorByScreen = {
+    startScreen: "#startBtn",
+    menuScreen: "#friendModeBtn",
+    friendGameScreen: "#board .cell:not([disabled])",
+  };
+
+  const actionSelector = actionSelectorByScreen[screen.id];
+
+  if (!actionSelector) {
+    return;
+  }
+
+  const actionElement = screen.querySelector(actionSelector);
+
+  if (actionElement instanceof HTMLElement) {
+    actionElement.focus({ preventScroll: true });
+  }
+}
+
 function showScreen(screenToShow) {
   const screens = [startScreen, menuScreen, friendGameScreen];
 
@@ -43,6 +68,8 @@ function showScreen(screenToShow) {
 
     screen.classList.toggle("hidden", screen !== screenToShow);
   });
+
+  focusScreenPrimaryAction(screenToShow);
 }
 
 function updateScores() {
