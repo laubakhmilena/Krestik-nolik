@@ -12,16 +12,14 @@
         <span class="shape shape-x" aria-hidden="true">✕</span>
         <span class="shape shape-o" aria-hidden="true">◯</span>
 
-        <div class="content">
+        <div class="content start-content">
           <p class="eyebrow">Классическая игра для двоих</p>
           <h1 class="title" id="startTitle">Крестики-нолики</h1>
           <p class="subtitle">
             Выбирайте режим и начинайте весёлую партию в обновлённом ярком интерфейсе.
           </p>
 
-          <button class="btn btn-primary cta-btn" id="startBtn" type="button">
-            Начать играть
-          </button>
+          <button class="btn btn-primary cta-btn" id="startBtn" type="button">Начать играть</button>
         </div>
       </section>
 
@@ -29,18 +27,19 @@
         <span class="shape shape-x second" aria-hidden="true">✕</span>
         <span class="shape shape-o second" aria-hidden="true">◯</span>
 
-        <div class="content">
+        <div class="content menu-content">
           <h2 class="title menu-title" id="menuTitle">Выберите режим игры</h2>
 
           <div class="mode-grid">
-            <button class="mode-card" id="friendModeBtn" type="button">
+            <button class="mode-card mode-card-ready" id="friendModeBtn" type="button">
               <span class="mode-card-title">Игра с другом</span>
               <span class="mode-card-text">Играть вдвоём на одном устройстве</span>
             </button>
 
-            <button class="mode-card" type="button">
+            <button class="mode-card mode-card-disabled" type="button" disabled aria-disabled="true">
+              <span class="mode-card-badge">Скоро</span>
               <span class="mode-card-title">Игра с ботом</span>
-              <span class="mode-card-text">Сразиться против компьютера</span>
+              <span class="mode-card-text">Режим в разработке</span>
             </button>
           </div>
 
