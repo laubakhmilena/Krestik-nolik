@@ -14,6 +14,11 @@ const restartBtn = document.getElementById("restartBtn");
 const backToMenuBtn = document.getElementById("backToMenuBtn");
 const resetScoreBtn = document.getElementById("resetScoreBtn");
 const orientationOverlay = document.getElementById("orientationOverlay");
+const statusHint = document.getElementById("statusHint");
+const modalOverlay = document.getElementById("modalOverlay");
+const exitConfirmModal = document.getElementById("exitConfirmModal");
+const confirmExitBtn = document.getElementById("confirmExitBtn");
+const cancelExitBtn = document.getElementById("cancelExitBtn");
 
 const winningLines = [
   [0, 1, 2],
@@ -34,6 +39,33 @@ let scoreX = 0;
 let scoreO = 0;
 let scoreDraws = 0;
 
+function isMatchInProgress() {
+  return !isGameFinished && boardState.some((cell) => cell !== "");
+}
+
+function closeExitConfirmModal() {
+  if (!modalOverlay) {
+    return;
+  }
+
+  modalOverlay.classList.add("hidden");
+  modalOverlay.setAttribute("aria-hidden", "true");
+}
+
+function openExitConfirmModal() {
+  if (!modalOverlay) {
+    return;
+  }
+
+  modalOverlay.classList.remove("hidden");
+  modalOverlay.setAttribute("aria-hidden", "false");
+  cancelExitBtn?.focus({ preventScroll: true });
+}
+
+function leaveGameToMenu() {
+  closeExitConfirmModal();
+  showScreen(menuScreen);
+}
 
 function disablePageScrollGestures() {
   const preventScroll = (event) => {
@@ -135,6 +167,20 @@ function updateStatus(message) {
     statusPanel.dataset.state = isWin ? "win" : isDraw ? "draw" : "turn";
   }
 
+  if (statusHint) {
+    if (message.startsWith("Победил")) {
+      statusHint.textContent = "Партия завершена. Нажмите «Играть снова», чтобы начать новую.";
+    } else if (message === "Ничья") {
+      statusHint.textContent = "Ничья. Попробуйте ещё раз в новой партии.";
+    } else {
+      statusHint.textContent = "Сделайте ход на поле 3×3";
+    }
+  }
+
+  if (friendGameScreen) {
+    friendGameScreen.dataset.matchState = message.startsWith("Победил") || message === "Ничья" ? "finished" : "active";
+  }
+
   if (restartBtn) {
     restartBtn.classList.toggle("game-over", message.startsWith("Победил") || message === "Ничья");
   }
@@ -184,6 +230,7 @@ function resetGame() {
   });
 
   updateStatus("Ход: X");
+  closeExitConfirmModal();
 }
 
 function checkWinner() {
@@ -269,7 +316,12 @@ if (friendModeBtn && friendGameScreen && menuScreen) {
 
 if (backToMenuBtn && menuScreen) {
   backToMenuBtn.addEventListener("click", () => {
-    showScreen(menuScreen);
+    if (isMatchInProgress()) {
+      openExitConfirmModal();
+      return;
+    }
+
+    leaveGameToMenu();
   });
 }
 
@@ -284,6 +336,34 @@ if (resetScoreBtn) {
 if (board) {
   board.addEventListener("click", handleCellClick);
 }
+
+if (cancelExitBtn) {
+  cancelExitBtn.addEventListener("click", closeExitConfirmModal);
+}
+
+if (confirmExitBtn) {
+  confirmExitBtn.addEventListener("click", leaveGameToMenu);
+}
+
+if (modalOverlay) {
+  modalOverlay.addEventListener("click", (event) => {
+    if (event.target === modalOverlay) {
+      closeExitConfirmModal();
+    }
+  });
+}
+
+if (exitConfirmModal) {
+  exitConfirmModal.addEventListener("click", (event) => {
+    event.stopPropagation();
+  });
+}
+
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && modalOverlay && !modalOverlay.classList.contains("hidden")) {
+    closeExitConfirmModal();
+  }
+});
 
 disablePageScrollGestures();
 updateScores();
