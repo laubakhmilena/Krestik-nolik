@@ -366,6 +366,7 @@ document.addEventListener("keydown", (event) => {
 });
 
 disablePageScrollGestures();
+closeExitConfirmModal();
 updateScores();
 updateOrientationState();
 
