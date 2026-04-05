@@ -61,6 +61,7 @@
           <div class="status-panel" id="statusPanel" data-state="turn" aria-live="polite">
             <p class="status-caption">Статус партии</p>
             <p class="game-status" id="statusText">Ход: X</p>
+            <p class="status-hint" id="statusHint">Сделайте ход на поле 3×3</p>
           </div>
 
           <div class="score-board" id="scoreBoard" aria-label="Счёт матчей">
@@ -102,6 +103,17 @@
         </div>
       </section>
     </main>
+
+    <div class="modal-overlay hidden" id="modalOverlay" aria-hidden="true">
+      <div class="confirm-modal" id="exitConfirmModal" role="dialog" aria-modal="true" aria-labelledby="exitModalTitle">
+        <h3 class="confirm-modal-title" id="exitModalTitle">Выйти в меню?</h3>
+        <p class="confirm-modal-text">Текущая партия не будет сохранена</p>
+        <div class="confirm-modal-actions">
+          <button class="btn btn-secondary modal-cancel-btn" id="cancelExitBtn" type="button">Остаться</button>
+          <button class="btn modal-confirm-btn" id="confirmExitBtn" type="button">Выйти</button>
+        </div>
+      </div>
+    </div>
 
     <div
       class="orientation-overlay hidden"

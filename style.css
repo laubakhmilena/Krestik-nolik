@@ -287,6 +287,7 @@ body {
   background: var(--panel-bg);
   padding: 9px 12px 10px;
   box-shadow: var(--shadow-panel);
+  transition: transform 160ms ease, box-shadow 200ms ease, background-color 200ms ease, border-color 200ms ease;
 }
 
 .status-caption {
@@ -306,14 +307,28 @@ body {
   line-height: 1.2;
 }
 
+.status-hint {
+  margin: 2px 0 0;
+  font-size: clamp(13px, 2vw, 15px);
+  color: rgba(44, 37, 109, 0.78);
+}
+
+.status-panel[data-state="turn"] {
+  border-color: rgba(115, 126, 230, 0.42);
+}
+
 .status-panel[data-state="win"] {
   background: linear-gradient(135deg, rgba(255, 235, 168, 0.84) 0%, rgba(255, 202, 130, 0.74) 100%);
   border-color: rgba(255, 187, 81, 0.68);
+  box-shadow: 0 14px 30px rgba(182, 127, 45, 0.25);
+  transform: translateY(-1px);
 }
 
 .status-panel[data-state="draw"] {
-  background: rgba(231, 239, 255, 0.8);
-  border-color: rgba(120, 151, 236, 0.58);
+  background: linear-gradient(140deg, rgba(220, 232, 255, 0.88) 0%, rgba(209, 225, 255, 0.72) 100%);
+  border-color: rgba(120, 151, 236, 0.64);
+  box-shadow: 0 14px 28px rgba(91, 116, 186, 0.23);
+  transform: translateY(-1px);
 }
 
 .score-board {
@@ -397,6 +412,15 @@ body {
   animation: winner-pop 320ms ease-out;
 }
 
+.friend-game-screen[data-match-state="finished"] .board .cell:not(.winner-cell) {
+  opacity: 0.72;
+  filter: saturate(0.9);
+}
+
+.friend-game-screen[data-match-state="finished"] .score-board {
+  opacity: 0.95;
+}
+
 @keyframes winner-pop {
   0% {
     transform: scale(0.92);
@@ -436,8 +460,20 @@ body {
 }
 
 .restart-btn.game-over {
-  box-shadow: 0 13px 24px rgba(106, 79, 255, 0.38);
-  filter: saturate(1.1);
+  transform: translateY(-1px) scale(1.02);
+  box-shadow: 0 16px 30px rgba(106, 79, 255, 0.44);
+  filter: saturate(1.12) brightness(1.04);
+  animation: restart-pulse 1.25s ease-in-out infinite;
+}
+
+@keyframes restart-pulse {
+  0%,
+  100% {
+    box-shadow: 0 16px 30px rgba(106, 79, 255, 0.38);
+  }
+  50% {
+    box-shadow: 0 20px 36px rgba(106, 79, 255, 0.52);
+  }
 }
 
 .menu-btn,
@@ -530,7 +566,72 @@ body {
 }
 
 .hidden {
-  display: none;
+  display: none !important;
+}
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(15, 10, 38, 0.58);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+}
+
+.confirm-modal {
+  width: min(340px, 100%);
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.46);
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 18px 34px rgba(29, 24, 74, 0.35);
+  padding: 18px 16px 14px;
+  text-align: center;
+}
+
+.confirm-modal-title {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 900;
+  color: #221a6a;
+}
+
+.confirm-modal-text {
+  margin: 8px 0 0;
+  font-size: 15px;
+  color: rgba(46, 40, 104, 0.86);
+}
+
+.confirm-modal-actions {
+  margin-top: 14px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.modal-cancel-btn {
+  min-height: 44px;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.modal-confirm-btn {
+  min-height: 44px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 88, 114, 0.45);
+  background: linear-gradient(135deg, #ff5d82 0%, #ff6d57 100%);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 800;
+  box-shadow: 0 8px 18px rgba(222, 68, 86, 0.3);
+}
+
+.modal-confirm-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 12px 22px rgba(222, 68, 86, 0.36);
 }
 
 @media (max-width: 900px) {
@@ -591,6 +692,14 @@ body {
   .shape-o {
     right: 10px;
     bottom: 10px;
+  }
+
+  .confirm-modal {
+    padding: 16px 14px 14px;
+  }
+
+  .confirm-modal-title {
+    font-size: 22px;
   }
 }
 
