@@ -13,6 +13,7 @@ const scoreDrawsText = document.getElementById("scoreDraws");
 const restartBtn = document.getElementById("restartBtn");
 const backToMenuBtn = document.getElementById("backToMenuBtn");
 const resetScoreBtn = document.getElementById("resetScoreBtn");
+const orientationOverlay = document.getElementById("orientationOverlay");
 
 const winningLines = [
   [0, 1, 2],
@@ -66,6 +67,23 @@ function focusScreenPrimaryAction(screen) {
   if (actionElement instanceof HTMLElement) {
     actionElement.focus({ preventScroll: true });
   }
+}
+
+function isPortraitOrientation() {
+  const byMedia = window.matchMedia?.("(orientation: portrait)").matches;
+  const byViewport = window.innerHeight >= window.innerWidth;
+  return byMedia ?? byViewport;
+}
+
+function updateOrientationState() {
+  const portrait = isPortraitOrientation();
+
+  if (!orientationOverlay) {
+    return;
+  }
+
+  orientationOverlay.classList.toggle("hidden", portrait);
+  orientationOverlay.setAttribute("aria-hidden", portrait ? "true" : "false");
 }
 
 function showScreen(screenToShow) {
@@ -269,3 +287,10 @@ if (board) {
 
 disablePageScrollGestures();
 updateScores();
+updateOrientationState();
+
+window.addEventListener("resize", updateOrientationState);
+window.addEventListener("orientationchange", updateOrientationState);
+
+const orientationMediaQuery = window.matchMedia?.("(orientation: portrait)");
+orientationMediaQuery?.addEventListener?.("change", updateOrientationState);
