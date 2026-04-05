@@ -34,6 +34,16 @@ let scoreO = 0;
 let scoreDraws = 0;
 
 
+function disablePageScrollGestures() {
+  const preventScroll = (event) => {
+    event.preventDefault();
+  };
+
+  document.addEventListener("touchmove", preventScroll, { passive: false });
+  document.addEventListener("wheel", preventScroll, { passive: false });
+}
+
+
 function focusScreenPrimaryAction(screen) {
   if (!screen) {
     return;
@@ -257,4 +267,5 @@ if (board) {
   board.addEventListener("click", handleCellClick);
 }
 
+disablePageScrollGestures();
 updateScores();
