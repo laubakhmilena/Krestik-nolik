@@ -38,6 +38,7 @@ const modalOverlay = document.getElementById("modalOverlay");
 const exitConfirmModal = document.getElementById("exitConfirmModal");
 const confirmExitBtn = document.getElementById("confirmExitBtn");
 const cancelExitBtn = document.getElementById("cancelExitBtn");
+const STORAGE_KEY = "ticTacToeState";
 
 const winningLines = [
   [0, 1, 2],
@@ -58,6 +59,7 @@ const difficultyMeta = {
 };
 
 let pendingExitTarget = null;
+let isRestoringState = false;
 
 const friendGame = {
   boardEl: board,
@@ -147,6 +149,10 @@ function showScreen(screenToShow) {
 
   closeExitConfirmModal();
   focusScreenPrimaryAction(screenToShow);
+
+  if (!isRestoringState) {
+    saveGameState();
+  }
 }
 
 function closeExitConfirmModal() {
@@ -258,6 +264,167 @@ function refreshFriendScores() {
   if (scoreDrawsText) scoreDrawsText.textContent = String(friendGame.scores.draws);
 }
 
+function getActiveScreenId() {
+  const validScreens = [startScreen, menuScreen, friendGameScreen];
+  const activeScreen = validScreens.find((screen) => screen && !screen.classList.contains("hidden"));
+
+  if (!activeScreen) {
+    return "startScreen";
+  }
+
+  return activeScreen.id;
+}
+
+function getSafeBoardState(boardState) {
+  if (!Array.isArray(boardState) || boardState.length !== 9) {
+    return Array(9).fill("");
+  }
+
+  return boardState.map((cell) => (cell === "X" || cell === "O" ? cell : ""));
+}
+
+function getSafeWinningLine(line) {
+  if (!Array.isArray(line) || line.length !== 3) {
+    return null;
+  }
+
+  const normalized = line.map((index) => Number(index));
+  const isValid = normalized.every((index) => Number.isInteger(index) && index >= 0 && index <= 8);
+  return isValid ? normalized : null;
+}
+
+function getGameState() {
+  return {
+    activeScreen: getActiveScreenId(),
+    scoreX: friendGame.scores.X,
+    scoreO: friendGame.scores.O,
+    scoreDraws: friendGame.scores.draws,
+    boardState: [...friendGame.state],
+    currentPlayer: friendGame.currentPlayer,
+    isGameFinished: friendGame.isFinished,
+    winningLine: friendGame.winningLine ? [...friendGame.winningLine] : null,
+    statusText: statusText?.textContent ?? "Ход: X",
+    statusHint: statusHint?.textContent ?? "Сделайте ход на поле 3×3",
+    statusPanelState: statusPanel?.dataset.state ?? "turn",
+    matchState: friendGameScreen?.dataset.matchState ?? "active",
+  };
+}
+
+function saveGameState() {
+  try {
+    const state = getGameState();
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  } catch (error) {
+    console.warn("Не удалось сохранить состояние игры", error);
+  }
+}
+
+function loadGameState() {
+  try {
+    const rawState = localStorage.getItem(STORAGE_KEY);
+    if (!rawState) {
+      return null;
+    }
+
+    const parsed = JSON.parse(rawState);
+    return parsed && typeof parsed === "object" ? parsed : null;
+  } catch (error) {
+    console.warn("Не удалось прочитать сохранённое состояние игры", error);
+    return null;
+  }
+}
+
+function clearSavedGameState() {
+  localStorage.removeItem(STORAGE_KEY);
+}
+
+function restoreFriendBoardUI() {
+  if (!board) {
+    return;
+  }
+
+  const cells = board.querySelectorAll(".cell");
+  cells.forEach((cell) => {
+    const index = Number(cell.dataset.index);
+    const value = friendGame.state[index] ?? "";
+
+    cell.textContent = value;
+    cell.classList.remove("winner-cell");
+    cell.disabled = friendGame.isFinished ? true : Boolean(value);
+  });
+
+  if (friendGame.winningLine) {
+    highlightWinnerCells(board, friendGame.winningLine);
+  }
+}
+
+function restoreGameState(state) {
+  isRestoringState = true;
+
+  const safeState = state && typeof state === "object" ? state : {};
+  const safeActiveScreen =
+    safeState.activeScreen === "menuScreen" || safeState.activeScreen === "friendGameScreen"
+      ? safeState.activeScreen
+      : "startScreen";
+
+  friendGame.scores = {
+    X: Number.isFinite(Number(safeState.scoreX)) ? Number(safeState.scoreX) : 0,
+    O: Number.isFinite(Number(safeState.scoreO)) ? Number(safeState.scoreO) : 0,
+    draws: Number.isFinite(Number(safeState.scoreDraws)) ? Number(safeState.scoreDraws) : 0,
+  };
+  refreshFriendScores();
+
+  friendGame.state = getSafeBoardState(safeState.boardState);
+  friendGame.currentPlayer = safeState.currentPlayer === "O" ? "O" : "X";
+  friendGame.isFinished = Boolean(safeState.isGameFinished);
+  friendGame.winningLine = getSafeWinningLine(safeState.winningLine);
+
+  if (statusText) {
+    statusText.textContent =
+      typeof safeState.statusText === "string" && safeState.statusText.trim()
+        ? safeState.statusText
+        : `Ход: ${friendGame.currentPlayer}`;
+  }
+
+  if (statusHint) {
+    statusHint.textContent =
+      typeof safeState.statusHint === "string" && safeState.statusHint.trim()
+        ? safeState.statusHint
+        : "Сделайте ход на поле 3×3";
+  }
+
+  if (statusPanel) {
+    const safePanelState = ["turn", "win", "draw"].includes(safeState.statusPanelState)
+      ? safeState.statusPanelState
+      : "turn";
+    statusPanel.dataset.state = safePanelState;
+  }
+
+  if (friendGameScreen) {
+    const safeMatchState = ["active", "finished"].includes(safeState.matchState)
+      ? safeState.matchState
+      : friendGame.isFinished
+        ? "finished"
+        : "active";
+    friendGameScreen.dataset.matchState = safeMatchState;
+  }
+
+  restoreFriendBoardUI();
+  restartBtn?.classList.toggle("game-over", friendGame.isFinished);
+
+  closeExitConfirmModal();
+
+  const screenById = {
+    startScreen,
+    menuScreen,
+    friendGameScreen,
+  };
+
+  showScreen(screenById[safeActiveScreen] ?? startScreen);
+  isRestoringState = false;
+  saveGameState();
+}
+
 function refreshBotScores() {
   if (botScoreXText) botScoreXText.textContent = String(botGame.scores.player);
   if (botScoreOText) botScoreOText.textContent = String(botGame.scores.bot);
@@ -285,11 +452,13 @@ function resetFriendBoard() {
   }
 
   restartBtn?.classList.remove("game-over");
+  saveGameState();
 }
 
 function resetFriendScores() {
   friendGame.scores = { X: 0, O: 0, draws: 0 };
   refreshFriendScores();
+  saveGameState();
 }
 
 function finishFriendGame(message, line = null) {
@@ -316,6 +485,7 @@ function finishFriendGame(message, line = null) {
   }
 
   restartBtn?.classList.add("game-over");
+  saveGameState();
 }
 
 function handleFriendCellClick(event) {
@@ -334,6 +504,7 @@ function handleFriendCellClick(event) {
   friendGame.state[index] = friendGame.currentPlayer;
   target.textContent = friendGame.currentPlayer;
   target.disabled = true;
+  saveGameState();
 
   const winnerResult = getWinnerForState(friendGame.state);
   if (winnerResult) {
@@ -352,6 +523,7 @@ function handleFriendCellClick(event) {
 
   friendGame.currentPlayer = friendGame.currentPlayer === "X" ? "O" : "X";
   updateStatus(statusPanel, statusText, statusHint, `Ход: ${friendGame.currentPlayer}`);
+  saveGameState();
 }
 
 function stopBotTurnTimer() {
@@ -725,8 +897,12 @@ if (startBtn && backBtn) {
 }
 
 friendModeBtn?.addEventListener("click", () => {
-  resetFriendBoard();
+  const hasSavedProgress = friendGame.state.some((cell) => cell) && !friendGame.isFinished;
+  if (!hasSavedProgress) {
+    resetFriendBoard();
+  }
   showScreen(friendGameScreen);
+  saveGameState();
 });
 
 botModeBtn?.addEventListener("click", () => {
@@ -781,6 +957,7 @@ cancelExitBtn?.addEventListener("click", closeExitConfirmModal);
 
 confirmExitBtn?.addEventListener("click", () => {
   leaveGameTo(pendingExitTarget ?? menuScreen);
+  saveGameState();
 });
 
 modalOverlay?.addEventListener("click", (event) => {
@@ -799,8 +976,16 @@ window.addEventListener("DOMContentLoaded", updateOrientationState);
 
 disablePageScrollGestures();
 updateOrientationState();
-resetFriendBoard();
-resetFriendScores();
+closeExitConfirmModal();
+const savedState = loadGameState();
+
+if (savedState) {
+  restoreGameState(savedState);
+} else {
+  resetFriendBoard();
+  resetFriendScores();
+  showScreen(startScreen);
+}
+
 resetBotScores();
 updateDifficultyLabel();
-showScreen(startScreen);
