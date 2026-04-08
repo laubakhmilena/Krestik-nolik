@@ -935,3 +935,117 @@ body {
 .bot-game-screen[data-match-state="finished"] .score-board {
   opacity: 0.95;
 }
+
+.rules-mode-card {
+  min-height: 110px;
+}
+
+.rules-screen {
+  align-items: stretch;
+}
+
+.rules-content {
+  max-width: 430px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: clamp(10px, 1.8vh, 14px);
+  text-align: left;
+}
+
+.rules-title {
+  margin: 0;
+  font-size: clamp(27px, 6.4vw, 36px);
+  text-align: center;
+}
+
+.rules-subtitle {
+  margin: 0;
+  color: var(--text-soft);
+  font-size: clamp(14px, 2.2vw, 17px);
+  line-height: 1.45;
+  text-align: center;
+  text-wrap: pretty;
+}
+
+.rules-cards {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  gap: 10px;
+  padding-right: 2px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.rules-card {
+  border: 1px solid var(--panel-border);
+  border-radius: 15px;
+  background: rgba(255, 255, 255, 0.62);
+  box-shadow: 0 8px 18px rgba(60, 52, 128, 0.14);
+  padding: 11px 12px;
+}
+
+.rules-card-title {
+  margin: 0;
+  font-size: clamp(18px, 3.1vw, 22px);
+  font-weight: 800;
+  color: #221c74;
+}
+
+.rules-list {
+  margin: 8px 0 0;
+  padding-left: 18px;
+  display: grid;
+  gap: 6px;
+  color: rgba(44, 37, 109, 0.9);
+  font-size: clamp(14px, 2.2vw, 16px);
+  line-height: 1.45;
+}
+
+.rules-back-btn {
+  margin-top: 2px;
+  width: 100%;
+  min-height: 48px;
+}
+
+@media (max-width: 480px) {
+  .rules-content {
+    gap: 9px;
+  }
+
+  .rules-card {
+    padding: 10px;
+    border-radius: 14px;
+  }
+
+  .rules-list {
+    gap: 5px;
+    padding-left: 17px;
+  }
+}
+
+@media (orientation: portrait) and (max-height: 680px) {
+  .rules-title {
+    font-size: clamp(24px, 5.3vmin, 32px);
+  }
+
+  .rules-subtitle {
+    font-size: 14px;
+  }
+
+  .rules-card {
+    padding: 9px 10px;
+  }
+
+  .rules-list {
+    margin-top: 6px;
+    gap: 4px;
+    font-size: 14px;
+    line-height: 1.35;
+  }
+
+  .rules-back-btn {
+    min-height: 42px;
+  }
+}

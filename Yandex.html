@@ -41,6 +41,11 @@
               <span class="mode-card-title">Игра с ботом</span>
               <span class="mode-card-text">Сразитесь с ИИ на трёх уровнях сложности</span>
             </button>
+
+            <button class="mode-card mode-card-ready rules-mode-card" id="rulesBtn" type="button">
+              <span class="mode-card-title">Правила</span>
+              <span class="mode-card-text">Коротко о режимах, подсказках и сохранении прогресса</span>
+            </button>
           </div>
 
           <button class="btn btn-secondary back-btn" id="backBtn" type="button">Назад</button>
@@ -173,6 +178,60 @@
               Сбросить счёт
             </button>
           </div>
+        </div>
+      </section>
+
+      <section class="screen rules-screen hidden" id="rulesScreen" aria-labelledby="rulesTitle">
+        <span class="shape shape-x second" aria-hidden="true">✕</span>
+        <span class="shape shape-o second" aria-hidden="true">◯</span>
+
+        <div class="content rules-content">
+          <h2 class="title rules-title" id="rulesTitle">Правила игры</h2>
+          <p class="rules-subtitle">
+            Соберите три одинаковых символа в ряд по горизонтали, вертикали или диагонали.
+          </p>
+
+          <div class="rules-cards" aria-label="Разделы правил">
+            <article class="rules-card">
+              <h3 class="rules-card-title">Игра с другом</h3>
+              <ul class="rules-list">
+                <li>Два игрока играют на одном устройстве.</li>
+                <li>Ходы делаются по очереди, первым ходит X.</li>
+                <li>Побеждает тот, кто первым соберёт три символа в линию.</li>
+                <li>Если клетки закончились и линии нет — ничья.</li>
+              </ul>
+            </article>
+
+            <article class="rules-card">
+              <h3 class="rules-card-title">Игра с ботом</h3>
+              <ul class="rules-list">
+                <li>Вы играете за X, бот — за O.</li>
+                <li>После вашего хода бот сразу делает ответный ход.</li>
+                <li>Можно выбрать уровень сложности: Легко, Средне или Сложно.</li>
+              </ul>
+            </article>
+
+            <article class="rules-card">
+              <h3 class="rules-card-title">Подсказки</h3>
+              <ul class="rules-list">
+                <li>После победы выигрышная линия подсвечивается.</li>
+                <li>Счёт матчей ведётся отдельно для каждого режима.</li>
+                <li>Кнопка «Играть снова» помогает быстро начать реванш.</li>
+              </ul>
+            </article>
+
+            <article class="rules-card">
+              <h3 class="rules-card-title">Прогресс</h3>
+              <ul class="rules-list">
+                <li>Счёт матчей сохраняется автоматически.</li>
+                <li>После обновления страницы игра может восстановить прогресс.</li>
+              </ul>
+            </article>
+          </div>
+
+          <button class="btn btn-secondary back-btn rules-back-btn" id="rulesBackBtn" type="button">
+            Назад
+          </button>
         </div>
       </section>
     </main>
