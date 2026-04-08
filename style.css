@@ -843,3 +843,95 @@ body {
     display: flex;
   }
 }
+
+.bot-mode-card {
+  border-color: rgba(118, 129, 255, 0.66);
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.72), rgba(242, 246, 255, 0.66));
+}
+
+.bot-mode-card .mode-card-badge {
+  color: #2846b7;
+  background: rgba(205, 222, 255, 0.92);
+}
+
+.bot-difficulty-content {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(12px, 2.2vh, 18px);
+}
+
+.difficulty-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+}
+
+.difficulty-btn {
+  border: 1px solid rgba(106, 121, 233, 0.45);
+  border-radius: 14px;
+  min-height: 58px;
+  padding: 12px 14px;
+  font-size: clamp(18px, 3.2vw, 24px);
+  font-weight: 800;
+  color: #221e75;
+  background: rgba(255, 255, 255, 0.84);
+  box-shadow: 0 10px 20px rgba(70, 82, 156, 0.14);
+  cursor: pointer;
+  transition: transform 160ms ease, box-shadow 180ms ease, background-color 180ms ease;
+}
+
+.difficulty-btn:hover {
+  transform: translateY(-1px);
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: 0 12px 24px rgba(70, 82, 156, 0.2);
+}
+
+.difficulty-btn:active {
+  transform: translateY(0) scale(0.99);
+}
+
+.difficulty-label {
+  margin: -2px auto 0;
+  width: fit-content;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  background: rgba(225, 233, 255, 0.9);
+  color: #2645b2;
+  border: 1px solid rgba(142, 166, 246, 0.58);
+}
+
+.difficulty-label[data-level="easy"] {
+  background: rgba(229, 245, 255, 0.88);
+  color: #2b4fb2;
+}
+
+.difficulty-label[data-level="medium"] {
+  background: rgba(255, 240, 211, 0.9);
+  color: #915f17;
+  border-color: rgba(255, 198, 111, 0.58);
+}
+
+.difficulty-label[data-level="hard"] {
+  background: rgba(255, 224, 238, 0.9);
+  color: #a02c67;
+  border-color: rgba(235, 124, 176, 0.56);
+}
+
+.status-panel[data-state="thinking"] {
+  background: linear-gradient(140deg, rgba(219, 240, 255, 0.92) 0%, rgba(216, 230, 255, 0.75) 100%);
+  border-color: rgba(113, 155, 224, 0.68);
+  box-shadow: 0 14px 28px rgba(91, 124, 194, 0.24);
+}
+
+.bot-game-screen[data-match-state="finished"] .board .cell:not(.winner-cell) {
+  opacity: 0.72;
+  filter: saturate(0.9);
+}
+
+.bot-game-screen[data-match-state="finished"] .score-board {
+  opacity: 0.95;
+}
