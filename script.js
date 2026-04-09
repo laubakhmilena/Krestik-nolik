@@ -1,3 +1,4 @@
+const appShell = document.getElementById("appShell");
 const startBtn = document.getElementById("startBtn");
 const backBtn = document.getElementById("backBtn");
 const startScreen = document.getElementById("startScreen");
@@ -102,15 +103,61 @@ function isPortraitOrientation() {
   return byMedia ?? byViewport;
 }
 
-function updateOrientationState() {
-  const portrait = isPortraitOrientation();
+let orientationFrameId = null;
+let isLandscapeLocked = false;
 
-  if (!orientationOverlay) {
+function setApplicationInteractivity(isInteractive) {
+  if (!appShell) {
     return;
   }
 
-  orientationOverlay.classList.toggle("hidden", portrait);
-  orientationOverlay.setAttribute("aria-hidden", portrait ? "true" : "false");
+  appShell.setAttribute("aria-hidden", isInteractive ? "false" : "true");
+
+  if ("inert" in appShell) {
+    appShell.inert = !isInteractive;
+  }
+}
+
+function applyOrientationState() {
+  const portrait = isPortraitOrientation();
+
+  if (orientationOverlay) {
+    orientationOverlay.classList.toggle("hidden", portrait);
+    orientationOverlay.setAttribute("aria-hidden", portrait ? "true" : "false");
+  }
+
+  document.body.classList.toggle("landscape-locked", !portrait);
+  setApplicationInteractivity(portrait);
+
+  if (!portrait) {
+    isLandscapeLocked = true;
+    if (document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur();
+    }
+    orientationOverlay?.focus({ preventScroll: true });
+    return;
+  }
+
+  if (isLandscapeLocked) {
+    isLandscapeLocked = false;
+    closeExitConfirmModal();
+    focusScreenPrimaryAction(
+      [startScreen, menuScreen, botDifficultyScreen, friendGameScreen, botGameScreen].find(
+        (screen) => screen && !screen.classList.contains("hidden")
+      ) ?? startScreen
+    );
+  }
+}
+
+function updateOrientationState() {
+  if (orientationFrameId) {
+    window.cancelAnimationFrame(orientationFrameId);
+  }
+
+  orientationFrameId = window.requestAnimationFrame(() => {
+    orientationFrameId = null;
+    applyOrientationState();
+  });
 }
 
 // Платформенная интеграция Яндекс Игр.
@@ -220,6 +267,10 @@ function closeExitConfirmModal() {
 }
 
 function openExitConfirmModal(targetScreen) {
+  if (!isPortraitOrientation()) {
+    return;
+  }
+
   pendingExitTarget = targetScreen;
 
   if (!modalOverlay) {
@@ -1167,9 +1218,9 @@ exitConfirmModal?.addEventListener("click", (event) => {
   event.stopPropagation();
 });
 
-window.addEventListener("resize", updateOrientationState);
-window.addEventListener("orientationchange", updateOrientationState);
-window.addEventListener("DOMContentLoaded", updateOrientationState);
+window.addEventListener("resize", updateOrientationState, { passive: true });
+window.addEventListener("orientationchange", updateOrientationState, { passive: true });
+document.addEventListener("DOMContentLoaded", updateOrientationState, { once: true });
 document.addEventListener("visibilitychange", handlePageVisibilityChange);
 
 async function bootstrapGame() {

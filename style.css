@@ -23,6 +23,7 @@ html,
 body {
   width: 100%;
   height: 100%;
+  min-height: 100dvh;
   margin: 0;
   font-family: "Segoe UI", "Inter", system-ui, -apple-system, sans-serif;
   color: var(--text-main);
@@ -31,6 +32,8 @@ body {
 }
 
 body {
+  position: fixed;
+  inset: 0;
   touch-action: manipulation;
   background:
     radial-gradient(circle at 18% 22%, rgba(253, 183, 255, 0.55) 0%, rgba(253, 183, 255, 0) 42%),
@@ -41,8 +44,9 @@ body {
 
 .app-shell {
   width: 100%;
-  height: 100%;
+  height: 100dvh;
   min-height: 100dvh;
+  max-height: 100dvh;
   display: grid;
   place-items: center;
   padding:
@@ -57,6 +61,7 @@ body {
   position: relative;
   width: min(470px, 100%);
   height: 100%;
+  min-height: 0;
   max-height: calc(100dvh - max(8px, var(--safe-top)) - max(8px, var(--safe-bottom)));
   padding: clamp(14px, 2.4vh, 24px) clamp(12px, 4vw, 18px);
   border-radius: clamp(22px, 3vw, 38px);
@@ -95,6 +100,7 @@ body {
 .content {
   width: 100%;
   max-width: 430px;
+  max-height: 100%;
   text-align: center;
 }
 
@@ -267,8 +273,11 @@ body {
 
 .friend-game-content {
   max-width: 430px;
+  height: 100%;
+  min-height: 0;
   display: flex;
   flex-direction: column;
+  justify-content: flex-start;
   gap: clamp(8px, 1.5vh, 12px);
 }
 
@@ -368,6 +377,7 @@ body {
 
 .board {
   width: min(100%, min(370px, 42vh));
+  max-width: min(100%, 370px);
   margin: 0 auto;
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -433,7 +443,7 @@ body {
 }
 
 .game-actions {
-  margin-top: 2px;
+  margin-top: auto;
   display: grid;
   grid-template-columns: 1fr;
   gap: 8px;
@@ -442,6 +452,7 @@ body {
 .game-actions .btn {
   width: 100%;
   min-height: 48px;
+  touch-action: manipulation;
   padding: 11px 14px;
   border-radius: 13px;
   font-size: clamp(14px, 2vw, 17px);
@@ -934,4 +945,34 @@ body {
 
 .bot-game-screen[data-match-state="finished"] .score-board {
   opacity: 0.95;
+}
+
+
+.btn,
+.mode-card,
+.difficulty-btn,
+.cell {
+  touch-action: manipulation;
+}
+
+body.landscape-locked .modal-overlay {
+  display: none !important;
+}
+
+body.landscape-locked .app-shell {
+  visibility: hidden;
+  pointer-events: none;
+}
+
+@media (max-width: 420px) {
+  .mode-card {
+    min-height: 112px;
+    padding: 14px;
+  }
+
+  .difficulty-btn,
+  .back-btn,
+  .game-actions .btn {
+    min-height: 44px;
+  }
 }
