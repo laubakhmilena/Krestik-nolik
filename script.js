@@ -40,6 +40,7 @@ const exitConfirmModal = document.getElementById("exitConfirmModal");
 const confirmExitBtn = document.getElementById("confirmExitBtn");
 const cancelExitBtn = document.getElementById("cancelExitBtn");
 const STORAGE_KEY = "ticTacToeState";
+const STORAGE_VERSION = 1;
 
 const winningLines = [
   [0, 1, 2],
@@ -387,6 +388,15 @@ function getSafeBoardState(boardState) {
   return boardState.map((cell) => (cell === "X" || cell === "O" ? cell : ""));
 }
 
+function getSafeScore(value) {
+  const score = Number(value);
+  if (!Number.isFinite(score) || score < 0) {
+    return 0;
+  }
+
+  return Math.floor(score);
+}
+
 function getSafeWinningLine(line) {
   if (!Array.isArray(line) || line.length !== 3) {
     return null;
@@ -395,6 +405,17 @@ function getSafeWinningLine(line) {
   const normalized = line.map((index) => Number(index));
   const isValid = normalized.every((index) => Number.isInteger(index) && index >= 0 && index <= 8);
   return isValid ? normalized : null;
+}
+
+function isWinningLineValidForState(state, line) {
+  const safeLine = getSafeWinningLine(line);
+
+  if (!safeLine) {
+    return false;
+  }
+
+  const [a, b, c] = safeLine;
+  return Boolean(state[a] && state[a] === state[b] && state[b] === state[c]);
 }
 
 function getSafeDifficulty(value) {
@@ -417,8 +438,111 @@ function getSafeMatchState(value, isFinished) {
   return isFinished ? "finished" : "active";
 }
 
+function normalizeFriendGameState(rawFriendState) {
+  const state = getSafeBoardState(rawFriendState?.state);
+  const winnerResult = getWinnerForState(state);
+  const isDraw = !winnerResult && getAvailableMoves(state).length === 0;
+  const hasValidWinningLine = isWinningLineValidForState(state, rawFriendState?.winningLine);
+  const winningLine = winnerResult?.line ?? (hasValidWinningLine ? getSafeWinningLine(rawFriendState?.winningLine) : null);
+  const isFinished = winnerResult ? true : isDraw ? true : Boolean(rawFriendState?.isFinished && getAvailableMoves(state).length === 0);
+  const currentPlayer = rawFriendState?.currentPlayer === "O" ? "O" : "X";
+  const defaultStatus = winnerResult ? `Победил ${winnerResult.winner}` : isDraw ? "Ничья" : `Ход: ${currentPlayer}`;
+  const defaultHint = winnerResult
+    ? "Партия завершена. Нажмите «Играть снова», чтобы начать новую."
+    : isDraw
+      ? "Ничья. Попробуйте ещё раз в новой партии."
+      : "Сделайте ход на поле 3×3";
+
+  return {
+    state,
+    currentPlayer,
+    isFinished,
+    winningLine: isFinished ? winningLine : null,
+    scores: {
+      X: getSafeScore(rawFriendState?.scores?.X),
+      O: getSafeScore(rawFriendState?.scores?.O),
+      draws: getSafeScore(rawFriendState?.scores?.draws),
+    },
+    statusText:
+      typeof rawFriendState?.statusText === "string" && rawFriendState.statusText.trim()
+        ? rawFriendState.statusText
+        : defaultStatus,
+    statusHint:
+      typeof rawFriendState?.statusHint === "string" && rawFriendState.statusHint.trim()
+        ? rawFriendState.statusHint
+        : defaultHint,
+    statusPanelState: getSafePanelState(rawFriendState?.statusPanelState),
+    matchState: getSafeMatchState(rawFriendState?.matchState, isFinished),
+  };
+}
+
+function normalizeBotGameState(rawBotState) {
+  const state = getSafeBoardState(rawBotState?.state);
+  const playerSymbol = rawBotState?.playerSymbol === "O" ? "O" : "X";
+  const botSymbol = playerSymbol === "X" ? "O" : "X";
+  const winnerResult = getWinnerForState(state);
+  const isDraw = !winnerResult && getAvailableMoves(state).length === 0;
+  const hasValidWinningLine = isWinningLineValidForState(state, rawBotState?.winningLine);
+  const winningLine = winnerResult?.line ?? (hasValidWinningLine ? getSafeWinningLine(rawBotState?.winningLine) : null);
+  const rawTurn = rawBotState?.turn;
+  const turn = rawTurn === "bot" ? "bot" : "player";
+  const isFinished = winnerResult ? true : isDraw ? true : Boolean(rawBotState?.isFinished && getAvailableMoves(state).length === 0);
+  const isBotThinking = !isFinished && turn === "bot" ? Boolean(rawBotState?.isBotThinking) : false;
+  const difficulty = getSafeDifficulty(rawBotState?.difficulty);
+  const defaultStatus = winnerResult
+    ? winnerResult.winner === botSymbol
+      ? "Победил бот"
+      : "Победили вы"
+    : isDraw
+      ? "Ничья"
+      : turn === "bot"
+        ? "Бот думает..."
+        : `Ваш ход: ${playerSymbol}`;
+  const defaultHint = winnerResult
+    ? "Партия завершена. Нажмите «Играть снова», чтобы начать новую."
+    : isDraw
+      ? "Ничья. Попробуйте другую стратегию."
+      : turn === "bot"
+        ? "Подождите, бот выбирает ход"
+        : "Сделайте ход на поле 3×3";
+  const defaultPanelState = winnerResult ? "win" : isDraw ? "draw" : turn === "bot" ? "thinking" : "turn";
+
+  return {
+    state,
+    isFinished,
+    winningLine: isFinished ? winningLine : null,
+    scores: {
+      player: getSafeScore(rawBotState?.scores?.player),
+      bot: getSafeScore(rawBotState?.scores?.bot),
+      draws: getSafeScore(rawBotState?.scores?.draws),
+    },
+    difficulty,
+    playerSymbol,
+    botSymbol,
+    turn: isFinished ? "player" : turn,
+    isBotThinking,
+    statusText:
+      typeof rawBotState?.statusText === "string" && rawBotState.statusText.trim()
+        ? rawBotState.statusText
+        : defaultStatus,
+    statusHint:
+      typeof rawBotState?.statusHint === "string" && rawBotState.statusHint.trim()
+        ? rawBotState.statusHint
+        : defaultHint,
+    statusPanelState: getSafePanelState(rawBotState?.statusPanelState ?? defaultPanelState),
+    matchState: getSafeMatchState(rawBotState?.matchState, isFinished),
+  };
+}
+
+function normalizeScreenState(activeScreen) {
+  return ["startScreen", "menuScreen", "botDifficultyScreen", "friendGameScreen", "botGameScreen"].includes(activeScreen)
+    ? activeScreen
+    : "startScreen";
+}
+
 function getGameState() {
   return {
+    version: STORAGE_VERSION,
     activeScreen: getActiveScreenId(),
     friendGame: {
       state: [...friendGame.state],
@@ -455,8 +579,10 @@ function saveGameState() {
   try {
     const state = getGameState();
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    return true;
   } catch (error) {
     console.warn("Не удалось сохранить состояние игры", error);
+    return false;
   }
 }
 
@@ -468,15 +594,25 @@ function loadGameState() {
     }
 
     const parsed = JSON.parse(rawState);
-    return parsed && typeof parsed === "object" ? parsed : null;
+    if (!parsed || typeof parsed !== "object") {
+      clearSavedGameState();
+      return null;
+    }
+
+    return parsed;
   } catch (error) {
     console.warn("Не удалось прочитать сохранённое состояние игры", error);
+    clearSavedGameState();
     return null;
   }
 }
 
 function clearSavedGameState() {
-  localStorage.removeItem(STORAGE_KEY);
+  try {
+    localStorage.removeItem(STORAGE_KEY);
+  } catch (error) {
+    console.warn("Не удалось очистить сохранение игры", error);
+  }
 }
 
 function restoreFriendBoardUI() {
@@ -537,95 +673,65 @@ function restoreGameState(state) {
   stopBotTurnTimer();
 
   const safeState = state && typeof state === "object" ? state : {};
-  const safeFriendState = safeState.friendGame && typeof safeState.friendGame === "object" ? safeState.friendGame : {};
-  const safeBotState = safeState.botGame && typeof safeState.botGame === "object" ? safeState.botGame : {};
+  const normalizedFriendGame = normalizeFriendGameState(safeState.friendGame);
+  const normalizedBotGame = normalizeBotGameState(safeState.botGame);
+  const safeActiveScreen = normalizeScreenState(safeState.activeScreen);
 
-  const safeActiveScreen =
-    ["startScreen", "menuScreen", "botDifficultyScreen", "friendGameScreen", "botGameScreen"].includes(
-      safeState.activeScreen
-    )
-      ? safeState.activeScreen
-      : "startScreen";
-
-  friendGame.scores = {
-    X: Number.isFinite(Number(safeFriendState.scores?.X)) ? Number(safeFriendState.scores.X) : 0,
-    O: Number.isFinite(Number(safeFriendState.scores?.O)) ? Number(safeFriendState.scores.O) : 0,
-    draws: Number.isFinite(Number(safeFriendState.scores?.draws)) ? Number(safeFriendState.scores.draws) : 0,
-  };
+  friendGame.scores = normalizedFriendGame.scores;
   refreshFriendScores();
 
-  friendGame.state = getSafeBoardState(safeFriendState.state);
-  friendGame.currentPlayer = safeFriendState.currentPlayer === "O" ? "O" : "X";
-  friendGame.isFinished = Boolean(safeFriendState.isFinished);
-  friendGame.winningLine = getSafeWinningLine(safeFriendState.winningLine);
+  friendGame.state = normalizedFriendGame.state;
+  friendGame.currentPlayer = normalizedFriendGame.currentPlayer;
+  friendGame.isFinished = normalizedFriendGame.isFinished;
+  friendGame.winningLine = normalizedFriendGame.winningLine;
 
   if (statusText) {
-    statusText.textContent =
-      typeof safeFriendState.statusText === "string" && safeFriendState.statusText.trim()
-        ? safeFriendState.statusText
-        : `Ход: ${friendGame.currentPlayer}`;
+    statusText.textContent = normalizedFriendGame.statusText;
   }
 
   if (statusHint) {
-    statusHint.textContent =
-      typeof safeFriendState.statusHint === "string" && safeFriendState.statusHint.trim()
-        ? safeFriendState.statusHint
-        : "Сделайте ход на поле 3×3";
+    statusHint.textContent = normalizedFriendGame.statusHint;
   }
 
   if (statusPanel) {
-    statusPanel.dataset.state = getSafePanelState(safeFriendState.statusPanelState);
+    statusPanel.dataset.state = normalizedFriendGame.statusPanelState;
   }
 
   if (friendGameScreen) {
-    friendGameScreen.dataset.matchState = getSafeMatchState(safeFriendState.matchState, friendGame.isFinished);
+    friendGameScreen.dataset.matchState = normalizedFriendGame.matchState;
   }
 
   restoreFriendBoardUI();
   restartBtn?.classList.toggle("game-over", friendGame.isFinished);
 
-  botGame.scores = {
-    player: Number.isFinite(Number(safeBotState.scores?.player)) ? Number(safeBotState.scores.player) : 0,
-    bot: Number.isFinite(Number(safeBotState.scores?.bot)) ? Number(safeBotState.scores.bot) : 0,
-    draws: Number.isFinite(Number(safeBotState.scores?.draws)) ? Number(safeBotState.scores.draws) : 0,
-  };
+  botGame.scores = normalizedBotGame.scores;
   refreshBotScores();
 
-  botGame.state = getSafeBoardState(safeBotState.state);
-  botGame.isFinished = Boolean(safeBotState.isFinished);
-  botGame.winningLine = getSafeWinningLine(safeBotState.winningLine);
-  botGame.difficulty = getSafeDifficulty(safeBotState.difficulty);
-  botGame.playerSymbol = safeBotState.playerSymbol === "O" ? "O" : "X";
-  botGame.botSymbol = botGame.playerSymbol === "X" ? "O" : "X";
-  botGame.turn = getSafeTurn(safeBotState.turn);
-  botGame.isBotThinking = Boolean(safeBotState.isBotThinking);
+  botGame.state = normalizedBotGame.state;
+  botGame.isFinished = normalizedBotGame.isFinished;
+  botGame.winningLine = normalizedBotGame.winningLine;
+  botGame.difficulty = normalizedBotGame.difficulty;
+  botGame.playerSymbol = normalizedBotGame.playerSymbol;
+  botGame.botSymbol = normalizedBotGame.botSymbol;
+  botGame.turn = normalizedBotGame.turn;
+  botGame.isBotThinking = normalizedBotGame.isBotThinking;
 
   updateDifficultyLabel();
 
   if (botStatusText) {
-    botStatusText.textContent =
-      typeof safeBotState.statusText === "string" && safeBotState.statusText.trim()
-        ? safeBotState.statusText
-        : botGame.turn === "bot"
-          ? "Бот думает..."
-          : `Ваш ход: ${botGame.playerSymbol}`;
+    botStatusText.textContent = normalizedBotGame.statusText;
   }
 
   if (botStatusHint) {
-    botStatusHint.textContent =
-      typeof safeBotState.statusHint === "string" && safeBotState.statusHint.trim()
-        ? safeBotState.statusHint
-        : botGame.turn === "bot"
-          ? "Подождите, бот выбирает ход"
-          : "Сделайте ход на поле 3×3";
+    botStatusHint.textContent = normalizedBotGame.statusHint;
   }
 
   if (botStatusPanel) {
-    botStatusPanel.dataset.state = getSafePanelState(safeBotState.statusPanelState);
+    botStatusPanel.dataset.state = normalizedBotGame.statusPanelState;
   }
 
   if (botGameScreen) {
-    botGameScreen.dataset.matchState = getSafeMatchState(safeBotState.matchState, botGame.isFinished);
+    botGameScreen.dataset.matchState = normalizedBotGame.matchState;
   }
 
   restoreBotBoardUI();
@@ -645,8 +751,7 @@ function restoreGameState(state) {
 
   const shouldResumeBotMove =
     !botGame.isFinished &&
-    botGame.turn === "bot" &&
-    (botGame.isBotThinking || botStatusPanel?.dataset.state === "thinking");
+    botGame.turn === "bot";
 
   if (shouldResumeBotMove) {
     botGame.isBotThinking = false;
