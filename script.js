@@ -60,6 +60,9 @@ const difficultyMeta = {
 
 let pendingExitTarget = null;
 let isRestoringState = false;
+let yandexGamesSdk = null;
+let sdkInitialized = false;
+let gameReadySent = false;
 
 const friendGame = {
   boardEl: board,
@@ -108,6 +111,56 @@ function updateOrientationState() {
 
   orientationOverlay.classList.toggle("hidden", portrait);
   orientationOverlay.setAttribute("aria-hidden", portrait ? "true" : "false");
+}
+
+// Платформенная интеграция Яндекс Игр.
+// Инициализация не обязательна для локального запуска и не блокирует игру при ошибках SDK.
+async function initYandexGamesSdk() {
+  if (typeof window === "undefined" || !window.YaGames?.init) {
+    return null;
+  }
+
+  try {
+    yandexGamesSdk = await window.YaGames.init();
+    sdkInitialized = true;
+    return yandexGamesSdk;
+  } catch (error) {
+    console.warn("SDK Яндекс Игр не инициализирован, продолжаем в гостевом режиме.", error);
+    yandexGamesSdk = null;
+    sdkInitialized = false;
+    return null;
+  }
+}
+
+// Вызываем ready только после восстановления UI/состояния.
+function markGameReady() {
+  if (gameReadySent) {
+    return;
+  }
+
+  const loadingApi = sdkInitialized ? yandexGamesSdk?.features?.LoadingAPI : null;
+
+  try {
+    loadingApi?.ready?.();
+    gameReadySent = true;
+  } catch (error) {
+    console.warn("Не удалось вызвать LoadingAPI.ready()", error);
+  }
+}
+
+function handlePageVisibilityChange() {
+  // Заготовка под паузу/резюмирование звука для мобильной публикации.
+  // Сейчас отключаем таймер хода бота при сворачивании, чтобы не терять контекст партии.
+  if (document.hidden && botGame.turn === "bot" && botGame.isBotThinking) {
+    stopBotTurnTimer();
+    updateStatus(botStatusPanel, botStatusText, botStatusHint, "Бот думает...", "Продолжите игру после возврата");
+    saveGameState();
+    return;
+  }
+
+  if (!document.hidden && !botGame.isFinished && botGame.turn === "bot" && !botGame.isBotThinking) {
+    applyBotMove();
+  }
 }
 
 function focusScreenPrimaryAction(screen) {
@@ -1117,22 +1170,37 @@ exitConfirmModal?.addEventListener("click", (event) => {
 window.addEventListener("resize", updateOrientationState);
 window.addEventListener("orientationchange", updateOrientationState);
 window.addEventListener("DOMContentLoaded", updateOrientationState);
+document.addEventListener("visibilitychange", handlePageVisibilityChange);
 
-disablePageScrollGestures();
-updateOrientationState();
-closeExitConfirmModal();
-const savedState = loadGameState();
+async function bootstrapGame() {
+  disablePageScrollGestures();
+  updateOrientationState();
+  closeExitConfirmModal();
 
-if (savedState) {
-  restoreGameState(savedState);
-} else {
-  resetFriendBoard();
-  resetFriendScores();
-  resetBotBoard({ keepStarter: true });
-  botGame.turn = "player";
-  updateStatus(botStatusPanel, botStatusText, botStatusHint, `Ваш ход: ${botGame.playerSymbol}`);
-  setBotBoardInteractive(true);
-  resetBotScores();
-  showScreen(startScreen);
-  saveGameState();
+  await initYandexGamesSdk();
+
+  const savedState = loadGameState();
+
+  if (savedState) {
+    restoreGameState(savedState);
+  } else {
+    resetFriendBoard();
+    resetFriendScores();
+    resetBotBoard({ keepStarter: true });
+    botGame.turn = "player";
+    updateStatus(botStatusPanel, botStatusText, botStatusHint, `Ваш ход: ${botGame.playerSymbol}`);
+    setBotBoardInteractive(true);
+    resetBotScores();
+    showScreen(startScreen);
+    saveGameState();
+  }
+
+  // Дожидаемся завершения первого кадра после восстановления UI
+  // и только затем сообщаем платформе о готовности игры.
+  window.requestAnimationFrame(() => {
+    updateOrientationState();
+    markGameReady();
+  });
 }
+
+bootstrapGame();
