@@ -1,6 +1,9 @@
 const startBtn = document.getElementById("startBtn");
+const rulesBtn = document.getElementById("rulesBtn");
 const backBtn = document.getElementById("backBtn");
 const startScreen = document.getElementById("startScreen");
+const rulesScreen = document.getElementById("rulesScreen");
+const rulesBackBtn = document.getElementById("rulesBackBtn");
 const menuScreen = document.getElementById("menuScreen");
 const friendModeBtn = document.getElementById("friendModeBtn");
 const botModeBtn = document.getElementById("botModeBtn");
@@ -170,6 +173,7 @@ function focusScreenPrimaryAction(screen) {
 
   const actionSelectorByScreen = {
     startScreen: "#startBtn",
+    rulesScreen: "#rulesBackBtn",
     menuScreen: "#friendModeBtn",
     friendGameScreen: "#board .cell:not([disabled])",
     botDifficultyScreen: "#easyLevelBtn",
@@ -190,7 +194,7 @@ function focusScreenPrimaryAction(screen) {
 }
 
 function showScreen(screenToShow) {
-  const screens = [startScreen, menuScreen, botDifficultyScreen, friendGameScreen, botGameScreen];
+  const screens = [startScreen, rulesScreen, menuScreen, botDifficultyScreen, friendGameScreen, botGameScreen];
 
   screens.forEach((screen) => {
     if (!screen) {
@@ -318,7 +322,7 @@ function refreshFriendScores() {
 }
 
 function getActiveScreenId() {
-  const validScreens = [startScreen, menuScreen, botDifficultyScreen, friendGameScreen, botGameScreen];
+  const validScreens = [startScreen, rulesScreen, menuScreen, botDifficultyScreen, friendGameScreen, botGameScreen];
   const activeScreen = validScreens.find((screen) => screen && !screen.classList.contains("hidden"));
 
   if (!activeScreen) {
@@ -490,7 +494,7 @@ function restoreGameState(state) {
   const safeBotState = safeState.botGame && typeof safeState.botGame === "object" ? safeState.botGame : {};
 
   const safeActiveScreen =
-    ["startScreen", "menuScreen", "botDifficultyScreen", "friendGameScreen", "botGameScreen"].includes(
+    ["startScreen", "rulesScreen", "menuScreen", "botDifficultyScreen", "friendGameScreen", "botGameScreen"].includes(
       safeState.activeScreen
     )
       ? safeState.activeScreen
@@ -584,6 +588,7 @@ function restoreGameState(state) {
 
   const screenById = {
     startScreen,
+    rulesScreen,
     menuScreen,
     botDifficultyScreen,
     friendGameScreen,
@@ -1090,6 +1095,14 @@ if (startBtn && backBtn) {
     showScreen(startScreen);
   });
 }
+
+rulesBtn?.addEventListener("click", () => {
+  showScreen(rulesScreen);
+});
+
+rulesBackBtn?.addEventListener("click", () => {
+  showScreen(startScreen);
+});
 
 friendModeBtn?.addEventListener("click", () => {
   const hasSavedProgress = friendGame.state.some((cell) => cell) && !friendGame.isFinished;

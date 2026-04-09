@@ -13,13 +13,65 @@
         <span class="shape shape-o" aria-hidden="true">◯</span>
 
         <div class="content start-content">
-          <p class="eyebrow">Классическая игра для двоих</p>
           <h1 class="title" id="startTitle">Крестики-нолики</h1>
           <p class="subtitle">
             Выбирайте режим и начинайте весёлую партию в обновлённом ярком интерфейсе.
           </p>
 
           <button class="btn btn-primary cta-btn" id="startBtn" type="button">Начать играть</button>
+          <button class="btn btn-secondary rules-btn" id="rulesBtn" type="button">Правила игры</button>
+        </div>
+      </section>
+
+      <section class="screen rules-screen hidden" id="rulesScreen" aria-labelledby="rulesTitle">
+        <span class="shape shape-x second" aria-hidden="true">✕</span>
+        <span class="shape shape-o second" aria-hidden="true">◯</span>
+
+        <div class="content rules-content">
+          <h2 class="title menu-title" id="rulesTitle">Правила игры</h2>
+          <p class="rules-lead">
+            Соберите три одинаковых символа в ряд по горизонтали, вертикали или диагонали.
+          </p>
+
+          <div class="rules-scroll" aria-label="Правила игры">
+            <article class="rules-card">
+              <h3 class="rules-card-title">Игра с другом</h3>
+              <ul class="rules-list">
+                <li>Два игрока играют на одном устройстве и ходят по очереди.</li>
+                <li>X делает первый ход.</li>
+                <li>Побеждает тот, кто первым соберёт три символа в линию.</li>
+                <li>Если поле заполнено и линии нет — ничья.</li>
+              </ul>
+            </article>
+
+            <article class="rules-card">
+              <h3 class="rules-card-title">Игра с ботом</h3>
+              <ul class="rules-list">
+                <li>Вы играете за X, бот играет за O.</li>
+                <li>После вашего хода бот сразу делает ответный ход.</li>
+                <li>Уровни сложности: Легко, Средне и Сложно.</li>
+              </ul>
+            </article>
+
+            <article class="rules-card">
+              <h3 class="rules-card-title">Подсказки</h3>
+              <ul class="rules-list">
+                <li>После победы выигрышная линия подсвечивается.</li>
+                <li>Счёт матчей считается отдельно для каждого режима.</li>
+                <li>Кнопка «Играть снова» помогает быстро начать реванш.</li>
+              </ul>
+            </article>
+
+            <article class="rules-card">
+              <h3 class="rules-card-title">Прогресс</h3>
+              <ul class="rules-list">
+                <li>Счёт матчей сохраняется автоматически.</li>
+                <li>После обновления страницы игра может восстановить прогресс.</li>
+              </ul>
+            </article>
+          </div>
+
+          <button class="btn btn-secondary back-btn" id="rulesBackBtn" type="button">Назад</button>
         </div>
       </section>
 

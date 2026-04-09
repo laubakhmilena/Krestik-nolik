@@ -170,6 +170,99 @@ body {
   transform: translateY(0) scale(0.99);
 }
 
+.rules-btn {
+  width: 100%;
+  min-height: 54px;
+  padding: clamp(13px, 2.4vw, 18px) 20px;
+  border-radius: 16px;
+  font-size: clamp(18px, 3.2vw, 24px);
+  font-weight: 800;
+  color: #2c2f83;
+  background: rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(104, 118, 220, 0.45);
+  box-shadow: 0 10px 22px rgba(65, 80, 155, 0.18);
+}
+
+.rules-btn:hover {
+  transform: translateY(-1px);
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 13px 24px rgba(65, 80, 155, 0.24);
+}
+
+.rules-content {
+  height: 100%;
+  max-width: 430px;
+  display: flex;
+  flex-direction: column;
+  gap: clamp(10px, 1.8vh, 16px);
+  text-align: left;
+}
+
+.rules-content .menu-title {
+  text-align: center;
+}
+
+.rules-lead {
+  margin: 0;
+  color: var(--text-soft);
+  font-size: clamp(15px, 2.4vw, 18px);
+  line-height: 1.45;
+  text-align: center;
+  text-wrap: pretty;
+}
+
+.rules-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  padding-right: 4px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(85, 98, 199, 0.6) rgba(255, 255, 255, 0.25);
+}
+
+.rules-scroll::-webkit-scrollbar {
+  width: 7px;
+}
+
+.rules-scroll::-webkit-scrollbar-track {
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.26);
+}
+
+.rules-scroll::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: rgba(85, 98, 199, 0.72);
+}
+
+.rules-card {
+  border: 1px solid var(--panel-border);
+  border-radius: 15px;
+  background: var(--panel-bg);
+  box-shadow: var(--shadow-panel);
+  padding: 12px 12px 11px;
+}
+
+.rules-card-title {
+  margin: 0 0 8px;
+  font-size: clamp(18px, 2.8vw, 22px);
+  font-weight: 800;
+  color: #241d74;
+}
+
+.rules-list {
+  margin: 0;
+  padding-left: 18px;
+  display: grid;
+  gap: 5px;
+  color: rgba(39, 31, 97, 0.9);
+  font-size: clamp(14px, 2.1vw, 16px);
+  line-height: 1.4;
+}
+
 .menu-title {
   font-size: clamp(28px, 7vw, 40px);
 }
@@ -661,7 +754,8 @@ body {
 
   .start-content,
   .menu-content,
-  .friend-game-content {
+  .friend-game-content,
+  .rules-content {
     gap: 10px;
   }
 
@@ -674,6 +768,11 @@ body {
     min-width: 100%;
     font-size: 22px;
     padding: 15px 16px;
+  }
+
+  .rules-btn {
+    min-height: 50px;
+    font-size: 20px;
   }
 
   .score-board {
@@ -756,6 +855,15 @@ body {
   .score-board {
     padding: 6px;
     gap: 5px;
+  }
+
+  .rules-card {
+    padding: 10px 11px;
+  }
+
+  .rules-list {
+    gap: 4px;
+    font-size: 14px;
   }
 
   .score-item {
