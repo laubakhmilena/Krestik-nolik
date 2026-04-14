@@ -73,7 +73,10 @@ let sdkInitialized = false;
 let sdkInitPromise = null;
 let gameReadySent = false;
 let gameReadyPending = false;
-let gameplayActive = false;
+let gameReadyInFlight = false;
+let gameReadyRetryTimerId = null;
+let gameplayDesiredActive = false;
+let gameplayPlatformActive = false;
 let lastSavedStateJson = "";
 let isAdPauseActive = false;
 let activeAdType = null;
@@ -462,25 +465,39 @@ function shouldGameplayBeActive() {
 
 function syncPlatformGameplayState() {
   const shouldBeActive = shouldGameplayBeActive();
+  gameplayDesiredActive = shouldBeActive;
   const gameplayApi = getYandexGameplayApi();
 
-  if (shouldBeActive === gameplayActive) {
-    return;
-  }
-
   if (shouldBeActive) {
+    if (gameplayPlatformActive) {
+      return;
+    }
+
+    if (!gameplayApi?.start) {
+      return;
+    }
+
     try {
-      gameplayApi?.start?.();
-      gameplayActive = true;
+      gameplayApi.start();
+      gameplayPlatformActive = true;
     } catch (error) {
       console.warn("Не удалось вызвать GameplayAPI.start()", error);
     }
     return;
   }
 
+  if (!gameplayPlatformActive) {
+    return;
+  }
+
+  if (!gameplayApi?.stop) {
+    gameplayPlatformActive = false;
+    return;
+  }
+
   try {
-    gameplayApi?.stop?.();
-    gameplayActive = false;
+    gameplayApi.stop();
+    gameplayPlatformActive = false;
   } catch (error) {
     console.warn("Не удалось вызвать GameplayAPI.stop()", error);
   }
@@ -488,25 +505,53 @@ function syncPlatformGameplayState() {
 
 // Вызываем ready только после восстановления UI/состояния и первого стабильного кадра.
 function markGameReadyWhenPossible() {
-  if (gameReadySent) {
+  if (gameReadySent || gameReadyInFlight) {
     return;
   }
 
-  if (document.hidden || isLandscapeLocked) {
+  if (gameReadyRetryTimerId) {
+    window.clearTimeout(gameReadyRetryTimerId);
+    gameReadyRetryTimerId = null;
+  }
+
+  if (document.hidden || isLandscapeLocked || isShowingScreen || isAdPauseActive) {
     gameReadyPending = true;
     return;
   }
 
-  gameReadyPending = false;
-  const loadingApi = sdkInitialized ? yandexGamesSdk?.features?.LoadingAPI : null;
-
-  try {
-    loadingApi?.ready?.();
-  } catch (error) {
-    console.warn("Не удалось вызвать LoadingAPI.ready()", error);
-  } finally {
-    gameReadySent = true;
+  if (!sdkInitialized || !yandexGamesSdk) {
+    gameReadyPending = true;
+    return;
   }
+
+  const loadingApi = sdkInitialized ? yandexGamesSdk?.features?.LoadingAPI : null;
+  if (!loadingApi?.ready) {
+    gameReadyPending = false;
+    return;
+  }
+
+  gameReadyPending = false;
+  gameReadyInFlight = true;
+
+  Promise.resolve()
+    .then(() => loadingApi.ready())
+    .then(() => {
+      gameReadySent = true;
+      gameReadyPending = false;
+    })
+    .catch((error) => {
+      console.warn("Не удалось вызвать LoadingAPI.ready()", error);
+      gameReadyPending = true;
+      if (!gameReadyRetryTimerId && !document.hidden) {
+        gameReadyRetryTimerId = window.setTimeout(() => {
+          gameReadyRetryTimerId = null;
+          markGameReadyWhenPossible();
+        }, 800);
+      }
+    })
+    .finally(() => {
+      gameReadyInFlight = false;
+    });
 }
 
 function handlePageVisibilityChange() {
@@ -1804,7 +1849,7 @@ window.addEventListener("orientationchange", updateOrientationState, { passive: 
 document.addEventListener("DOMContentLoaded", updateOrientationState, { once: true });
 document.addEventListener("visibilitychange", handlePageVisibilityChange);
 window.addEventListener("pagehide", () => {
-  if (gameplayActive) {
+  if (gameplayPlatformActive || gameplayDesiredActive) {
     const gameplayApi = getYandexGameplayApi();
 
     try {
@@ -1812,7 +1857,8 @@ window.addEventListener("pagehide", () => {
     } catch (error) {
       console.warn("Не удалось остановить GameplayAPI при закрытии страницы", error);
     } finally {
-      gameplayActive = false;
+      gameplayPlatformActive = false;
+      gameplayDesiredActive = false;
     }
   }
 });
@@ -1824,6 +1870,10 @@ async function bootstrapGame() {
 
   await initYandexGamesSdk();
   updateRewardedButtonsState();
+  syncPlatformGameplayState();
+  if (gameReadyPending) {
+    markGameReadyWhenPossible();
+  }
 
   const savedState = loadGameState();
 
