@@ -66,7 +66,10 @@ let isModalOpen = false;
 let isShowingScreen = false;
 let yandexGamesSdk = null;
 let sdkInitialized = false;
+let sdkInitPromise = null;
 let gameReadySent = false;
+let gameReadyPending = false;
+let gameplayActive = false;
 let lastSavedStateJson = "";
 
 const friendGame = {
@@ -148,6 +151,7 @@ function applyOrientationState() {
       }
       orientationOverlay?.focus({ preventScroll: true });
     }
+    syncPlatformGameplayState();
     return;
   }
 
@@ -161,6 +165,11 @@ function applyOrientationState() {
     );
   }
 
+  if (gameReadyPending) {
+    markGameReadyWhenPossible();
+  }
+
+  syncPlatformGameplayState();
   resumeBotTurnIfNeeded();
 }
 
@@ -178,45 +187,105 @@ function updateOrientationState() {
 // Платформенная интеграция Яндекс Игр.
 // Инициализация не обязательна для локального запуска и не блокирует игру при ошибках SDK.
 async function initYandexGamesSdk() {
-  if (typeof window === "undefined" || !window.YaGames?.init) {
-    return null;
+  if (sdkInitPromise) {
+    return sdkInitPromise;
+  }
+
+  sdkInitPromise = (async () => {
+    if (typeof window === "undefined" || !window.YaGames?.init) {
+      return null;
+    }
+
+    try {
+      yandexGamesSdk = await window.YaGames.init();
+      sdkInitialized = true;
+      return yandexGamesSdk;
+    } catch (error) {
+      console.warn("SDK Яндекс Игр не инициализирован, продолжаем в гостевом режиме.", error);
+      yandexGamesSdk = null;
+      sdkInitialized = false;
+      return null;
+    }
+  })();
+
+  return sdkInitPromise;
+}
+
+function getYandexGameplayApi() {
+  return sdkInitialized ? yandexGamesSdk?.features?.GameplayAPI ?? null : null;
+}
+
+function isGameScreenActive() {
+  const activeScreenId = getActiveScreenId();
+  return activeScreenId === "friendGameScreen" || activeScreenId === "botGameScreen";
+}
+
+function shouldGameplayBeActive() {
+  return isGameScreenActive() && isPortraitOrientation() && !document.hidden;
+}
+
+function syncPlatformGameplayState() {
+  const shouldBeActive = shouldGameplayBeActive();
+  const gameplayApi = getYandexGameplayApi();
+
+  if (shouldBeActive === gameplayActive) {
+    return;
+  }
+
+  if (shouldBeActive) {
+    try {
+      gameplayApi?.start?.();
+      gameplayActive = true;
+    } catch (error) {
+      console.warn("Не удалось вызвать GameplayAPI.start()", error);
+    }
+    return;
   }
 
   try {
-    yandexGamesSdk = await window.YaGames.init();
-    sdkInitialized = true;
-    return yandexGamesSdk;
+    gameplayApi?.stop?.();
+    gameplayActive = false;
   } catch (error) {
-    console.warn("SDK Яндекс Игр не инициализирован, продолжаем в гостевом режиме.", error);
-    yandexGamesSdk = null;
-    sdkInitialized = false;
-    return null;
+    console.warn("Не удалось вызвать GameplayAPI.stop()", error);
   }
 }
 
-// Вызываем ready только после восстановления UI/состояния.
-function markGameReady() {
+// Вызываем ready только после восстановления UI/состояния и первого стабильного кадра.
+function markGameReadyWhenPossible() {
   if (gameReadySent) {
     return;
   }
 
+  if (document.hidden || isLandscapeLocked) {
+    gameReadyPending = true;
+    return;
+  }
+
+  gameReadyPending = false;
   const loadingApi = sdkInitialized ? yandexGamesSdk?.features?.LoadingAPI : null;
 
   try {
     loadingApi?.ready?.();
-    gameReadySent = true;
   } catch (error) {
     console.warn("Не удалось вызвать LoadingAPI.ready()", error);
+  } finally {
+    gameReadySent = true;
   }
 }
 
 function handlePageVisibilityChange() {
+  syncPlatformGameplayState();
+
   if (document.hidden && botGame.turn === "bot") {
     botGame.shouldResumeBotMove = !botGame.isFinished;
     stopBotTurnTimer();
     updateStatus(botStatusPanel, botStatusText, botStatusHint, "Бот думает...", "Продолжите игру после возврата");
     saveGameState();
     return;
+  }
+
+  if (!document.hidden && gameReadyPending) {
+    markGameReadyWhenPossible();
   }
 
   resumeBotTurnIfNeeded();
@@ -302,6 +371,7 @@ function showScreen(screenToShow) {
   }
 
   isShowingScreen = false;
+  syncPlatformGameplayState();
   resumeBotTurnIfNeeded();
 }
 
@@ -318,6 +388,7 @@ function closeExitConfirmModal({ keepPendingTarget = false } = {}) {
   modalOverlay.classList.add("hidden");
   modalOverlay.setAttribute("aria-hidden", "true");
   isModalOpen = false;
+  resumeBotTurnIfNeeded();
 }
 
 function openExitConfirmModal(targetScreen) {
@@ -338,6 +409,9 @@ function openExitConfirmModal(targetScreen) {
   modalOverlay.setAttribute("aria-hidden", "false");
   isModalOpen = true;
   cancelExitBtn?.focus({ preventScroll: true });
+  stopBotTurnTimer();
+  botGame.shouldResumeBotMove = botGame.turn === "bot" && !botGame.isFinished;
+  saveGameState();
 }
 
 function leaveGameTo(screen) {
@@ -937,6 +1011,7 @@ function canBotActNow() {
   return (
     !document.hidden &&
     isPortraitOrientation() &&
+    !isModalOpen &&
     getActiveScreenId() === "botGameScreen" &&
     !botGame.isFinished &&
     botGame.turn === "bot"
@@ -1450,6 +1525,19 @@ window.addEventListener("resize", updateOrientationState, { passive: true });
 window.addEventListener("orientationchange", updateOrientationState, { passive: true });
 document.addEventListener("DOMContentLoaded", updateOrientationState, { once: true });
 document.addEventListener("visibilitychange", handlePageVisibilityChange);
+window.addEventListener("pagehide", () => {
+  if (gameplayActive) {
+    const gameplayApi = getYandexGameplayApi();
+
+    try {
+      gameplayApi?.stop?.();
+    } catch (error) {
+      console.warn("Не удалось остановить GameplayAPI при закрытии страницы", error);
+    } finally {
+      gameplayActive = false;
+    }
+  }
+});
 
 async function bootstrapGame() {
   disablePageScrollGestures();
@@ -1478,7 +1566,8 @@ async function bootstrapGame() {
   // и только затем сообщаем платформе о готовности игры.
   window.requestAnimationFrame(() => {
     updateOrientationState();
-    markGameReady();
+    syncPlatformGameplayState();
+    markGameReadyWhenPossible();
   });
 }
 
