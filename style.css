@@ -112,7 +112,18 @@ body {
   min-height: 0;
 }
 
-.start-content,
+.start-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  gap: clamp(10px, 1.8vh, 16px);
+  height: 100%;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-right: 2px;
+}
+
 .menu-content {
   display: flex;
   flex-direction: column;
@@ -182,6 +193,61 @@ body {
 
 .cta-btn:active {
   transform: translateY(0) scale(0.99);
+}
+
+.start-rules {
+  width: 100%;
+  text-align: left;
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.56);
+  background: rgba(255, 255, 255, 0.58);
+  box-shadow: 0 10px 22px rgba(62, 53, 130, 0.14);
+  padding: 12px;
+  margin-bottom: 2px;
+}
+
+.start-rules-title {
+  margin: 0;
+  font-size: clamp(20px, 4.4vw, 24px);
+  font-weight: 800;
+  color: #251f73;
+}
+
+.start-rules-subtitle {
+  margin: 5px 0 0;
+  font-size: clamp(13px, 2.2vw, 15px);
+  line-height: 1.4;
+  color: rgba(47, 40, 111, 0.82);
+}
+
+.start-rules-grid {
+  margin-top: 10px;
+  display: grid;
+  gap: 8px;
+}
+
+.start-rule-card {
+  border-radius: 14px;
+  border: 1px solid var(--panel-border);
+  background: rgba(255, 255, 255, 0.68);
+  padding: 9px 10px;
+}
+
+.start-rule-card h3 {
+  margin: 0;
+  font-size: clamp(16px, 3.2vw, 18px);
+  font-weight: 800;
+  color: #241d75;
+}
+
+.start-rule-card ul {
+  margin: 6px 0 0;
+  padding-left: 18px;
+  display: grid;
+  gap: 4px;
+  font-size: clamp(13px, 2.1vw, 14px);
+  line-height: 1.35;
+  color: rgba(44, 37, 109, 0.9);
 }
 
 .menu-title {
