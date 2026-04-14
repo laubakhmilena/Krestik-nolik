@@ -75,6 +75,7 @@ let gameReadySent = false;
 let gameReadyPending = false;
 let gameReadyInFlight = false;
 let gameReadyRetryTimerId = null;
+let gameReadyRetryAfterAd = false;
 let gameplayDesiredActive = false;
 let gameplayPlatformActive = false;
 let lastSavedStateJson = "";
@@ -321,6 +322,14 @@ function resumeGameAfterAd() {
   }
 
   syncPlatformGameplayState();
+
+  if (!gameReadySent && (gameReadyPending || gameReadyRetryAfterAd)) {
+    markGameReadyWhenPossible();
+    if (!gameReadySent && gameReadyPending) {
+      scheduleGameReadyRetry();
+    }
+  }
+
   saveGameState();
 }
 
@@ -504,17 +513,55 @@ function syncPlatformGameplayState() {
 }
 
 // Вызываем ready только после восстановления UI/состояния и первого стабильного кадра.
+function clearGameReadyRetryTimer() {
+  if (!gameReadyRetryTimerId) {
+    return;
+  }
+
+  window.clearTimeout(gameReadyRetryTimerId);
+  gameReadyRetryTimerId = null;
+}
+
+function scheduleGameReadyRetry() {
+  if (gameReadySent || gameReadyInFlight || gameReadyRetryTimerId) {
+    return;
+  }
+
+  // Во время рекламы откладываем новую попытку до resume,
+  // чтобы pending не зависал без следующего триггера.
+  if (isAdPauseActive) {
+    gameReadyRetryAfterAd = true;
+    return;
+  }
+
+  gameReadyRetryTimerId = window.setTimeout(() => {
+    gameReadyRetryTimerId = null;
+
+    if (gameReadySent || gameReadyInFlight || !gameReadyPending) {
+      return;
+    }
+
+    if (isAdPauseActive) {
+      gameReadyRetryAfterAd = true;
+      return;
+    }
+
+    markGameReadyWhenPossible();
+  }, 800);
+}
+
 function markGameReadyWhenPossible() {
   if (gameReadySent || gameReadyInFlight) {
     return;
   }
 
-  if (gameReadyRetryTimerId) {
-    window.clearTimeout(gameReadyRetryTimerId);
-    gameReadyRetryTimerId = null;
+  if (isAdPauseActive) {
+    gameReadyPending = true;
+    gameReadyRetryAfterAd = true;
+    return;
   }
 
-  if (document.hidden || isLandscapeLocked || isShowingScreen || isAdPauseActive) {
+  if (document.hidden || isLandscapeLocked || isShowingScreen) {
     gameReadyPending = true;
     return;
   }
@@ -527,10 +574,14 @@ function markGameReadyWhenPossible() {
   const loadingApi = sdkInitialized ? yandexGamesSdk?.features?.LoadingAPI : null;
   if (!loadingApi?.ready) {
     gameReadyPending = false;
+    clearGameReadyRetryTimer();
+    gameReadyRetryAfterAd = false;
     return;
   }
 
   gameReadyPending = false;
+  gameReadyRetryAfterAd = false;
+  clearGameReadyRetryTimer();
   gameReadyInFlight = true;
 
   Promise.resolve()
@@ -538,16 +589,13 @@ function markGameReadyWhenPossible() {
     .then(() => {
       gameReadySent = true;
       gameReadyPending = false;
+      gameReadyRetryAfterAd = false;
+      clearGameReadyRetryTimer();
     })
     .catch((error) => {
       console.warn("Не удалось вызвать LoadingAPI.ready()", error);
       gameReadyPending = true;
-      if (!gameReadyRetryTimerId && !document.hidden) {
-        gameReadyRetryTimerId = window.setTimeout(() => {
-          gameReadyRetryTimerId = null;
-          markGameReadyWhenPossible();
-        }, 800);
-      }
+      scheduleGameReadyRetry();
     })
     .finally(() => {
       gameReadyInFlight = false;
