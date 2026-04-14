@@ -25,8 +25,8 @@
 html,
 body {
   width: 100%;
-  height: 100%;
-  min-height: 100dvh;
+  height: 100svh;
+  min-height: 100svh;
   margin: 0;
   font-family: "Segoe UI", "Inter", system-ui, -apple-system, sans-serif;
   color: var(--text-main);
@@ -47,9 +47,9 @@ body {
 
 .app-shell {
   width: 100%;
-  height: 100dvh;
-  min-height: 100dvh;
-  max-height: 100dvh;
+  height: 100%;
+  min-height: 100%;
+  max-height: 100%;
   display: grid;
   place-items: center;
   padding:
@@ -69,7 +69,7 @@ body {
   width: min(470px, 100%);
   height: 100%;
   min-height: 0;
-  max-height: calc(100dvh - max(8px, var(--safe-top)) - max(8px, var(--safe-bottom)));
+  max-height: 100%;
   padding: clamp(14px, 2.4vh, 24px) clamp(12px, 4vw, 18px);
   border-radius: clamp(22px, 3vw, 38px);
   border: 1px solid var(--glass-border);
@@ -107,6 +107,7 @@ body {
 .content {
   width: 100%;
   max-width: 430px;
+  height: 100%;
   max-height: 100%;
   text-align: center;
   min-height: 0;
@@ -283,15 +284,18 @@ body {
   max-width: 430px;
   height: 100%;
   min-height: 0;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
+  display: grid;
+  grid-template-rows: auto auto auto minmax(0, 1fr) auto;
+  align-content: stretch;
   gap: clamp(8px, 1.35vh, 11px);
 }
 
 #friendGameScreen .friend-game-content {
-  justify-content: center;
   padding-block: clamp(4px, 1vh, 10px);
+}
+
+#botGameScreen .friend-game-content {
+  grid-template-rows: auto auto auto auto minmax(0, 1fr) auto;
 }
 
 .game-title {
@@ -389,7 +393,7 @@ body {
 }
 
 .board {
-  width: min(100%, min(370px, 42vh));
+  width: min(100%, min(360px, 40svh));
   max-width: min(100%, 370px);
   margin: 0 auto;
   display: grid;
@@ -590,6 +594,7 @@ body {
 
 .orientation-card {
   width: min(360px, 100%);
+  max-height: 100%;
   border-radius: 20px;
   border: 1px solid rgba(255, 255, 255, 0.26);
   background: rgba(255, 255, 255, 0.12);
@@ -631,7 +636,11 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 16px;
+  padding:
+    max(12px, var(--safe-top))
+    max(12px, var(--safe-right))
+    max(12px, var(--safe-bottom))
+    max(12px, var(--safe-left));
   background: rgba(15, 10, 38, 0.58);
   backdrop-filter: blur(3px);
   -webkit-backdrop-filter: blur(3px);
@@ -640,6 +649,7 @@ body {
 
 .confirm-modal {
   width: min(340px, 100%);
+  max-height: 100%;
   border-radius: 18px;
   border: 1px solid rgba(255, 255, 255, 0.46);
   background: rgba(255, 255, 255, 0.9);
@@ -693,7 +703,7 @@ body {
 @media (max-width: 900px) {
   .screen {
     height: 100%;
-    max-height: calc(100dvh - 2 * clamp(10px, 2.6vmin, 24px));
+    max-height: 100%;
     padding-inline: clamp(14px, 4.2vw, 22px);
   }
 
@@ -710,7 +720,7 @@ body {
 
   .screen {
     height: 100%;
-    max-height: calc(100dvh - 16px);
+    max-height: 100%;
     border-radius: 20px;
     padding: 14px 12px;
   }
@@ -762,12 +772,11 @@ body {
 @media (orientation: portrait) and (max-height: 760px) {
   .screen {
     height: 100%;
-    max-height: calc(100dvh - 12px);
+    max-height: 100%;
     padding-block: 12px;
   }
 
   .friend-game-content {
-    justify-content: flex-start;
     gap: 9px;
   }
 
@@ -828,7 +837,7 @@ body {
   }
 
   .board {
-    width: min(100%, min(380px, 48vh));
+    width: min(100%, min(332px, 36svh));
     gap: 7px;
   }
 
@@ -880,7 +889,7 @@ body {
   }
 
   .board {
-    width: min(100%, min(320px, 44vh));
+    width: min(100%, min(286px, 31svh));
     gap: 6px;
   }
 
@@ -891,6 +900,39 @@ body {
   .game-actions .btn {
     min-height: 38px;
     font-size: 14px;
+  }
+
+  .status-caption {
+    font-size: 11px;
+  }
+
+  .status-hint {
+    font-size: 12px;
+  }
+
+  .score-label {
+    font-size: 11px;
+  }
+}
+
+@media (orientation: portrait) and (max-height: 480px) {
+  .screen {
+    padding: 8px;
+  }
+
+  .friend-game-content {
+    gap: 5px;
+  }
+
+  .board {
+    width: min(100%, min(252px, 27svh));
+    gap: 5px;
+  }
+
+  .game-actions .btn {
+    min-height: 34px;
+    padding: 7px 9px;
+    font-size: 13px;
   }
 }
 
