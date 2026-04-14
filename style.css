@@ -17,6 +17,9 @@
 
 * {
   box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  user-select: none;
 }
 
 html,
@@ -55,6 +58,10 @@ body {
     max(8px, var(--safe-bottom))
     max(8px, var(--safe-left));
   overflow: hidden;
+}
+
+.app-shell[aria-hidden="true"] {
+  pointer-events: none;
 }
 
 .screen {
@@ -102,6 +109,7 @@ body {
   max-width: 430px;
   max-height: 100%;
   text-align: center;
+  min-height: 0;
 }
 
 .start-content,
@@ -542,6 +550,7 @@ body {
     max(16px, var(--safe-bottom))
     max(16px, var(--safe-left));
   background: rgba(18, 10, 50, 0.88);
+  touch-action: none;
 }
 
 .orientation-card {
@@ -591,6 +600,7 @@ body {
   background: rgba(15, 10, 38, 0.58);
   backdrop-filter: blur(3px);
   -webkit-backdrop-filter: blur(3px);
+  touch-action: none;
 }
 
 .confirm-modal {
@@ -953,6 +963,11 @@ body {
 .difficulty-btn,
 .cell {
   touch-action: manipulation;
+}
+
+.orientation-overlay.hidden,
+.modal-overlay.hidden {
+  pointer-events: none;
 }
 
 body.landscape-locked .modal-overlay {

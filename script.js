@@ -62,9 +62,12 @@ const difficultyMeta = {
 
 let pendingExitTarget = null;
 let isRestoringState = false;
+let isModalOpen = false;
+let isShowingScreen = false;
 let yandexGamesSdk = null;
 let sdkInitialized = false;
 let gameReadySent = false;
+let lastSavedStateJson = "";
 
 const friendGame = {
   boardEl: board,
@@ -87,6 +90,8 @@ const botGame = {
   turn: "player",
   isBotThinking: false,
   botTurnTimeoutId: null,
+  moveGeneration: 0,
+  shouldResumeBotMove: false,
 };
 
 function disablePageScrollGestures() {
@@ -96,6 +101,7 @@ function disablePageScrollGestures() {
 
   document.addEventListener("touchmove", preventScroll, { passive: false });
   document.addEventListener("wheel", preventScroll, { passive: false });
+  document.addEventListener("contextmenu", (event) => event.preventDefault());
 }
 
 function isPortraitOrientation() {
@@ -106,6 +112,7 @@ function isPortraitOrientation() {
 
 let orientationFrameId = null;
 let isLandscapeLocked = false;
+let wasPortraitOnLastApply = null;
 
 function setApplicationInteractivity(isInteractive) {
   if (!appShell) {
@@ -121,6 +128,8 @@ function setApplicationInteractivity(isInteractive) {
 
 function applyOrientationState() {
   const portrait = isPortraitOrientation();
+  const orientationChanged = wasPortraitOnLastApply !== portrait;
+  wasPortraitOnLastApply = portrait;
 
   if (orientationOverlay) {
     orientationOverlay.classList.toggle("hidden", portrait);
@@ -131,23 +140,28 @@ function applyOrientationState() {
   setApplicationInteractivity(portrait);
 
   if (!portrait) {
-    isLandscapeLocked = true;
-    if (document.activeElement instanceof HTMLElement) {
-      document.activeElement.blur();
+    if (!isLandscapeLocked || orientationChanged) {
+      isLandscapeLocked = true;
+      closeExitConfirmModal({ keepPendingTarget: false });
+      if (document.activeElement instanceof HTMLElement) {
+        document.activeElement.blur();
+      }
+      orientationOverlay?.focus({ preventScroll: true });
     }
-    orientationOverlay?.focus({ preventScroll: true });
     return;
   }
 
   if (isLandscapeLocked) {
     isLandscapeLocked = false;
-    closeExitConfirmModal();
+    closeExitConfirmModal({ keepPendingTarget: false });
     focusScreenPrimaryAction(
       [startScreen, menuScreen, botDifficultyScreen, friendGameScreen, botGameScreen].find(
         (screen) => screen && !screen.classList.contains("hidden")
       ) ?? startScreen
     );
   }
+
+  resumeBotTurnIfNeeded();
 }
 
 function updateOrientationState() {
@@ -197,18 +211,15 @@ function markGameReady() {
 }
 
 function handlePageVisibilityChange() {
-  // Заготовка под паузу/резюмирование звука для мобильной публикации.
-  // Сейчас отключаем таймер хода бота при сворачивании, чтобы не терять контекст партии.
-  if (document.hidden && botGame.turn === "bot" && botGame.isBotThinking) {
+  if (document.hidden && botGame.turn === "bot") {
+    botGame.shouldResumeBotMove = !botGame.isFinished;
     stopBotTurnTimer();
     updateStatus(botStatusPanel, botStatusText, botStatusHint, "Бот думает...", "Продолжите игру после возврата");
     saveGameState();
     return;
   }
 
-  if (!document.hidden && !botGame.isFinished && botGame.turn === "bot" && !botGame.isBotThinking) {
-    applyBotMove();
-  }
+  resumeBotTurnIfNeeded();
 }
 
 function focusScreenPrimaryAction(screen) {
@@ -237,7 +248,39 @@ function focusScreenPrimaryAction(screen) {
   }
 }
 
+function bindAction(button, handler) {
+  if (!button) {
+    return;
+  }
+
+  button.addEventListener("click", (event) => {
+    if (button.disabled) {
+      return;
+    }
+
+    button.disabled = true;
+    try {
+      handler(event);
+    } finally {
+      window.setTimeout(() => {
+        button.disabled = false;
+      }, 120);
+    }
+  });
+}
+
 function showScreen(screenToShow) {
+  if (!screenToShow || isShowingScreen) {
+    return;
+  }
+
+  const activeScreenId = getActiveScreenId();
+  const isSameScreen = activeScreenId === screenToShow.id;
+  if (isSameScreen && !isModalOpen) {
+    return;
+  }
+
+  isShowingScreen = true;
   const screens = [startScreen, menuScreen, botDifficultyScreen, friendGameScreen, botGameScreen];
 
   screens.forEach((screen) => {
@@ -248,44 +291,59 @@ function showScreen(screenToShow) {
     screen.classList.toggle("hidden", screen !== screenToShow);
   });
 
-  closeExitConfirmModal();
-  focusScreenPrimaryAction(screenToShow);
+  closeExitConfirmModal({ keepPendingTarget: false });
 
-  if (!isRestoringState) {
+  if (isPortraitOrientation()) {
+    focusScreenPrimaryAction(screenToShow);
+  }
+
+  if (!isRestoringState && !isSameScreen) {
     saveGameState();
   }
+
+  isShowingScreen = false;
+  resumeBotTurnIfNeeded();
 }
 
-function closeExitConfirmModal() {
-  pendingExitTarget = null;
+function closeExitConfirmModal({ keepPendingTarget = false } = {}) {
+  if (!keepPendingTarget) {
+    pendingExitTarget = null;
+  }
 
   if (!modalOverlay) {
+    isModalOpen = false;
     return;
   }
 
   modalOverlay.classList.add("hidden");
   modalOverlay.setAttribute("aria-hidden", "true");
+  isModalOpen = false;
 }
 
 function openExitConfirmModal(targetScreen) {
-  if (!isPortraitOrientation()) {
+  if (!targetScreen || !isPortraitOrientation() || isLandscapeLocked) {
     return;
   }
 
-  pendingExitTarget = targetScreen;
+  if (isModalOpen && pendingExitTarget?.id === targetScreen.id) {
+    return;
+  }
 
   if (!modalOverlay) {
     return;
   }
 
+  pendingExitTarget = targetScreen;
   modalOverlay.classList.remove("hidden");
   modalOverlay.setAttribute("aria-hidden", "false");
+  isModalOpen = true;
   cancelExitBtn?.focus({ preventScroll: true });
 }
 
 function leaveGameTo(screen) {
+  botGame.shouldResumeBotMove = false;
   stopBotTurnTimer();
-  closeExitConfirmModal();
+  closeExitConfirmModal({ keepPendingTarget: false });
   showScreen(screen);
 }
 
@@ -578,7 +636,13 @@ function getGameState() {
 function saveGameState() {
   try {
     const state = getGameState();
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    const stateJson = JSON.stringify(state);
+    if (stateJson === lastSavedStateJson) {
+      return true;
+    }
+
+    localStorage.setItem(STORAGE_KEY, stateJson);
+    lastSavedStateJson = stateJson;
     return true;
   } catch (error) {
     console.warn("Не удалось сохранить состояние игры", error);
@@ -610,6 +674,7 @@ function loadGameState() {
 function clearSavedGameState() {
   try {
     localStorage.removeItem(STORAGE_KEY);
+    lastSavedStateJson = "";
   } catch (error) {
     console.warn("Не удалось очистить сохранение игры", error);
   }
@@ -737,7 +802,7 @@ function restoreGameState(state) {
   restoreBotBoardUI();
   botRestartBtn?.classList.toggle("game-over", botGame.isFinished);
 
-  closeExitConfirmModal();
+  closeExitConfirmModal({ keepPendingTarget: false });
 
   const screenById = {
     startScreen,
@@ -749,16 +814,11 @@ function restoreGameState(state) {
 
   showScreen(screenById[safeActiveScreen] ?? startScreen);
 
-  const shouldResumeBotMove =
-    !botGame.isFinished &&
-    botGame.turn === "bot";
-
-  if (shouldResumeBotMove) {
-    botGame.isBotThinking = false;
-    applyBotMove();
-  }
+  botGame.shouldResumeBotMove = !botGame.isFinished && botGame.turn === "bot";
+  botGame.isBotThinking = false;
 
   isRestoringState = false;
+  resumeBotTurnIfNeeded();
   saveGameState();
 }
 
@@ -834,7 +894,7 @@ function handleFriendCellClick(event) {
 
   const index = Number(target.dataset.index);
 
-  if (friendGame.isFinished || friendGame.state[index]) {
+  if (getActiveScreenId() !== "friendGameScreen" || friendGame.isFinished || friendGame.state[index]) {
     return;
   }
 
@@ -870,6 +930,30 @@ function stopBotTurnTimer() {
   }
 
   botGame.isBotThinking = false;
+  botGame.moveGeneration += 1;
+}
+
+function canBotActNow() {
+  return (
+    !document.hidden &&
+    isPortraitOrientation() &&
+    getActiveScreenId() === "botGameScreen" &&
+    !botGame.isFinished &&
+    botGame.turn === "bot"
+  );
+}
+
+function resumeBotTurnIfNeeded() {
+  if (!botGame.shouldResumeBotMove && !(botGame.turn === "bot" && !botGame.isFinished)) {
+    return;
+  }
+
+  if (!canBotActNow()) {
+    return;
+  }
+
+  botGame.shouldResumeBotMove = false;
+  applyBotMove();
 }
 
 function updateDifficultyLabel() {
@@ -1036,6 +1120,7 @@ function setBotBoardInteractive(isInteractive) {
 function finishBotGame(resultMessage, line = null) {
   botGame.isFinished = true;
   botGame.winningLine = line;
+  botGame.shouldResumeBotMove = false;
   stopBotTurnTimer();
 
   if (line) {
@@ -1067,13 +1152,35 @@ function applyBotMove() {
     return;
   }
 
+  if (!canBotActNow()) {
+    botGame.shouldResumeBotMove = true;
+    updateStatus(botStatusPanel, botStatusText, botStatusHint, "Бот думает...", "Продолжите игру, чтобы бот сделал ход");
+    setBotBoardInteractive(false);
+    saveGameState();
+    return;
+  }
+
+  stopBotTurnTimer();
+  const activeGeneration = botGame.moveGeneration;
   botGame.isBotThinking = true;
+  botGame.shouldResumeBotMove = false;
   updateStatus(botStatusPanel, botStatusText, botStatusHint, "Бот думает...", "Подождите, бот выбирает ход");
   setBotBoardInteractive(false);
   saveGameState();
 
   botGame.botTurnTimeoutId = window.setTimeout(() => {
     botGame.botTurnTimeoutId = null;
+
+    if (activeGeneration !== botGame.moveGeneration) {
+      return;
+    }
+
+    if (!canBotActNow()) {
+      botGame.isBotThinking = false;
+      botGame.shouldResumeBotMove = true;
+      saveGameState();
+      return;
+    }
 
     if (botGame.isFinished || botGame.turn !== "bot") {
       botGame.isBotThinking = false;
@@ -1118,6 +1225,7 @@ function applyBotMove() {
     }
 
     botGame.isBotThinking = false;
+    botGame.shouldResumeBotMove = false;
     botGame.turn = "player";
     setBotBoardInteractive(true);
     updateStatus(
@@ -1143,6 +1251,7 @@ function resetBotBoard({ keepStarter = false } = {}) {
     const botStarts = Math.random() < 0.5;
     botGame.turn = botStarts ? "bot" : "player";
   }
+  botGame.shouldResumeBotMove = false;
 
   if (botBoard) {
     botBoard.querySelectorAll(".cell").forEach((cell) => {
@@ -1171,7 +1280,8 @@ function resetBotBoard({ keepStarter = false } = {}) {
   } else {
     setBotBoardInteractive(false);
     updateStatus(botStatusPanel, botStatusText, botStatusHint, "Бот думает...", "Бот начинает партию");
-    applyBotMove();
+    botGame.shouldResumeBotMove = true;
+    resumeBotTurnIfNeeded();
   }
 
   saveGameState();
@@ -1193,7 +1303,13 @@ function handleBotCellClick(event) {
 
   const index = Number(target.dataset.index);
 
-  if (botGame.isFinished || botGame.isBotThinking || botGame.turn !== "player" || botGame.state[index]) {
+  if (
+    getActiveScreenId() !== "botGameScreen" ||
+    botGame.isFinished ||
+    botGame.isBotThinking ||
+    botGame.turn !== "player" ||
+    botGame.state[index]
+  ) {
     return;
   }
 
@@ -1217,8 +1333,9 @@ function handleBotCellClick(event) {
   }
 
   botGame.turn = "bot";
+  botGame.shouldResumeBotMove = true;
   saveGameState();
-  applyBotMove();
+  resumeBotTurnIfNeeded();
 }
 
 function isFriendMatchInProgress() {
@@ -1230,6 +1347,10 @@ function isBotMatchInProgress() {
 }
 
 function openBotGameWithDifficulty(level) {
+  if (getActiveScreenId() === "botGameScreen" && botGame.difficulty === getSafeDifficulty(level) && !botGame.isFinished) {
+    return;
+  }
+
   botGame.difficulty = getSafeDifficulty(level);
   updateDifficultyLabel();
   resetBotBoard();
@@ -1237,17 +1358,15 @@ function openBotGameWithDifficulty(level) {
   saveGameState();
 }
 
-if (startBtn && backBtn) {
-  startBtn.addEventListener("click", () => {
-    showScreen(menuScreen);
-  });
+bindAction(startBtn, () => {
+  showScreen(menuScreen);
+});
 
-  backBtn.addEventListener("click", () => {
-    showScreen(startScreen);
-  });
-}
+bindAction(backBtn, () => {
+  showScreen(startScreen);
+});
 
-friendModeBtn?.addEventListener("click", () => {
+bindAction(friendModeBtn, () => {
   const hasSavedProgress = friendGame.state.some((cell) => cell) && !friendGame.isFinished;
   if (!hasSavedProgress) {
     resetFriendBoard();
@@ -1256,21 +1375,21 @@ friendModeBtn?.addEventListener("click", () => {
   saveGameState();
 });
 
-botModeBtn?.addEventListener("click", () => {
+bindAction(botModeBtn, () => {
   showScreen(botDifficultyScreen);
   saveGameState();
 });
 
-easyLevelBtn?.addEventListener("click", () => openBotGameWithDifficulty("easy"));
-mediumLevelBtn?.addEventListener("click", () => openBotGameWithDifficulty("medium"));
-hardLevelBtn?.addEventListener("click", () => openBotGameWithDifficulty("hard"));
+bindAction(easyLevelBtn, () => openBotGameWithDifficulty("easy"));
+bindAction(mediumLevelBtn, () => openBotGameWithDifficulty("medium"));
+bindAction(hardLevelBtn, () => openBotGameWithDifficulty("hard"));
 
-botDifficultyBackBtn?.addEventListener("click", () => {
+bindAction(botDifficultyBackBtn, () => {
   showScreen(menuScreen);
   saveGameState();
 });
 
-backToMenuBtn?.addEventListener("click", () => {
+bindAction(backToMenuBtn, () => {
   if (isFriendMatchInProgress()) {
     openExitConfirmModal(menuScreen);
     return;
@@ -1279,7 +1398,7 @@ backToMenuBtn?.addEventListener("click", () => {
   leaveGameTo(menuScreen);
 });
 
-botBackToMenuBtn?.addEventListener("click", () => {
+bindAction(botBackToMenuBtn, () => {
   if (isBotMatchInProgress()) {
     openExitConfirmModal(menuScreen);
     return;
@@ -1288,7 +1407,7 @@ botBackToMenuBtn?.addEventListener("click", () => {
   leaveGameTo(menuScreen);
 });
 
-botChangeDifficultyBtn?.addEventListener("click", () => {
+bindAction(botChangeDifficultyBtn, () => {
   if (isBotMatchInProgress()) {
     openExitConfirmModal(botDifficultyScreen);
     return;
@@ -1297,25 +1416,29 @@ botChangeDifficultyBtn?.addEventListener("click", () => {
   leaveGameTo(botDifficultyScreen);
 });
 
-restartBtn?.addEventListener("click", resetFriendBoard);
-botRestartBtn?.addEventListener("click", () => resetBotBoard({ keepStarter: false }));
-
-resetScoreBtn?.addEventListener("click", resetFriendScores);
-botResetScoreBtn?.addEventListener("click", resetBotScores);
+bindAction(restartBtn, resetFriendBoard);
+bindAction(botRestartBtn, () => resetBotBoard({ keepStarter: false }));
+bindAction(resetScoreBtn, resetFriendScores);
+bindAction(botResetScoreBtn, resetBotScores);
 
 board?.addEventListener("click", handleFriendCellClick);
 botBoard?.addEventListener("click", handleBotCellClick);
 
-cancelExitBtn?.addEventListener("click", closeExitConfirmModal);
+bindAction(cancelExitBtn, () => closeExitConfirmModal({ keepPendingTarget: false }));
 
-confirmExitBtn?.addEventListener("click", () => {
+bindAction(confirmExitBtn, () => {
+  if (isLandscapeLocked) {
+    closeExitConfirmModal({ keepPendingTarget: false });
+    return;
+  }
+
   leaveGameTo(pendingExitTarget ?? menuScreen);
   saveGameState();
 });
 
 modalOverlay?.addEventListener("click", (event) => {
   if (event.target === modalOverlay) {
-    closeExitConfirmModal();
+    closeExitConfirmModal({ keepPendingTarget: false });
   }
 });
 
