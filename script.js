@@ -34,6 +34,8 @@ const botRestartBtn = document.getElementById("botRestartBtn");
 const botChangeDifficultyBtn = document.getElementById("botChangeDifficultyBtn");
 const botBackToMenuBtn = document.getElementById("botBackToMenuBtn");
 const botResetScoreBtn = document.getElementById("botResetScoreBtn");
+const friendRewardedRestartBtn = document.getElementById("friendRewardedRestartBtn");
+const botRewardedRestartBtn = document.getElementById("botRewardedRestartBtn");
 const orientationOverlay = document.getElementById("orientationOverlay");
 const modalOverlay = document.getElementById("modalOverlay");
 const exitConfirmModal = document.getElementById("exitConfirmModal");
@@ -54,6 +56,8 @@ const winningLines = [
 ];
 
 const BOT_THINK_DELAY_MS = 450;
+const INTERSTITIAL_MIN_MATCHES = 2;
+const INTERSTITIAL_MIN_INTERVAL_MS = 90_000;
 const difficultyMeta = {
   easy: { label: "Легко" },
   medium: { label: "Средне" },
@@ -71,6 +75,10 @@ let gameReadySent = false;
 let gameReadyPending = false;
 let gameplayActive = false;
 let lastSavedStateJson = "";
+let isAdPauseActive = false;
+let activeAdType = null;
+let isInterstitialPending = false;
+let isRewardedPending = false;
 
 const friendGame = {
   boardEl: board,
@@ -95,6 +103,11 @@ const botGame = {
   botTurnTimeoutId: null,
   moveGeneration: 0,
   shouldResumeBotMove: false,
+};
+
+const monetizationState = {
+  finishedMatchesSinceLastInterstitial: 0,
+  lastInterstitialAt: 0,
 };
 
 function disablePageScrollGestures() {
@@ -215,13 +228,236 @@ function getYandexGameplayApi() {
   return sdkInitialized ? yandexGamesSdk?.features?.GameplayAPI ?? null : null;
 }
 
+function getAdvertisementApi() {
+  if (!sdkInitialized || !yandexGamesSdk) {
+    return null;
+  }
+
+  return yandexGamesSdk?.features?.AdvertisementAPI ?? yandexGamesSdk?.adv ?? null;
+}
+
+function setRewardedButtonsBusy(isBusy) {
+  [friendRewardedRestartBtn, botRewardedRestartBtn].forEach((button) => {
+    if (!button) {
+      return;
+    }
+
+    button.disabled = isBusy || !button.dataset.adEnabled || button.dataset.adEnabled === "false";
+    button.closest(".game-actions")?.classList.toggle("ad-loading", isBusy);
+  });
+}
+
+function updateRewardedButtonsState() {
+  const adApi = getAdvertisementApi();
+  const hasRewardedMethod = Boolean(adApi?.showRewardedVideo);
+
+  [friendRewardedRestartBtn, botRewardedRestartBtn].forEach((button) => {
+    if (!button) {
+      return;
+    }
+
+    button.dataset.adEnabled = String(hasRewardedMethod);
+    button.disabled = !hasRewardedMethod || isRewardedPending;
+    button.hidden = !hasRewardedMethod;
+    button.setAttribute(
+      "aria-label",
+      hasRewardedMethod
+        ? "Посмотреть рекламу и получить быстрый реванш"
+        : "Rewarded-реклама сейчас недоступна"
+    );
+  });
+}
+
+function canShowInterstitialNow() {
+  if (isInterstitialPending || isRewardedPending || isAdPauseActive || isModalOpen || isLandscapeLocked) {
+    return false;
+  }
+
+  const adApi = getAdvertisementApi();
+  if (!adApi?.showFullscreenAdv) {
+    return false;
+  }
+
+  const enoughMatches = monetizationState.finishedMatchesSinceLastInterstitial >= INTERSTITIAL_MIN_MATCHES;
+  const enoughTimePassed = Date.now() - monetizationState.lastInterstitialAt >= INTERSTITIAL_MIN_INTERVAL_MS;
+  return enoughMatches && enoughTimePassed;
+}
+
+function pauseGameForAd(adType) {
+  if (isAdPauseActive) {
+    return;
+  }
+
+  isAdPauseActive = true;
+  activeAdType = adType;
+  stopBotTurnTimer();
+  setBotBoardInteractive(false);
+  lockBoard(board);
+  syncPlatformGameplayState();
+  saveGameState();
+}
+
+function resumeGameAfterAd() {
+  if (!isAdPauseActive) {
+    return;
+  }
+
+  isAdPauseActive = false;
+  activeAdType = null;
+
+  if (!friendGame.isFinished && getActiveScreenId() === "friendGameScreen") {
+    unlockBoard(board, friendGame.state);
+  }
+
+  if (getActiveScreenId() === "botGameScreen" && !botGame.isFinished) {
+    if (botGame.turn === "player") {
+      setBotBoardInteractive(true);
+    }
+
+    resumeBotTurnIfNeeded();
+  }
+
+  syncPlatformGameplayState();
+  saveGameState();
+}
+
+function showInterstitialAd(reason = "match-end") {
+  if (!canShowInterstitialNow()) {
+    return Promise.resolve(false);
+  }
+
+  const adApi = getAdvertisementApi();
+  isInterstitialPending = true;
+
+  return new Promise((resolve) => {
+    let resumed = false;
+    const complete = (shown) => {
+      if (resumed) {
+        return;
+      }
+
+      resumed = true;
+      isInterstitialPending = false;
+      resumeGameAfterAd();
+      resolve(shown);
+    };
+
+    try {
+      adApi.showFullscreenAdv({
+        callbacks: {
+          onOpen: () => {
+            pauseGameForAd(`interstitial:${reason}`);
+          },
+          onClose: (wasShown = true) => {
+            if (wasShown) {
+              monetizationState.finishedMatchesSinceLastInterstitial = 0;
+              monetizationState.lastInterstitialAt = Date.now();
+            }
+            complete(Boolean(wasShown));
+          },
+          onError: (error) => {
+            console.warn("Не удалось показать interstitial.", error);
+            complete(false);
+          },
+          onOffline: () => {
+            complete(false);
+          },
+        },
+      });
+    } catch (error) {
+      console.warn("Ошибка запуска interstitial.", error);
+      complete(false);
+    }
+  });
+}
+
+function showRewardedAd(onReward) {
+  if (isRewardedPending || isInterstitialPending || isAdPauseActive || isModalOpen || isLandscapeLocked) {
+    return Promise.resolve(false);
+  }
+
+  const adApi = getAdvertisementApi();
+  if (!adApi?.showRewardedVideo) {
+    updateRewardedButtonsState();
+    return Promise.resolve(false);
+  }
+
+  isRewardedPending = true;
+  setRewardedButtonsBusy(true);
+
+  return new Promise((resolve) => {
+    let isRewardGranted = false;
+    let isCompleted = false;
+
+    const complete = (result) => {
+      if (isCompleted) {
+        return;
+      }
+
+      isCompleted = true;
+      isRewardedPending = false;
+      setRewardedButtonsBusy(false);
+      updateRewardedButtonsState();
+      resumeGameAfterAd();
+      resolve(result);
+    };
+
+    try {
+      adApi.showRewardedVideo({
+        callbacks: {
+          onOpen: () => {
+            pauseGameForAd("rewarded:quick-rematch");
+          },
+          onRewarded: () => {
+            isRewardGranted = true;
+          },
+          onClose: () => {
+            if (isRewardGranted) {
+              try {
+                onReward?.();
+              } catch (error) {
+                console.warn("Ошибка применения rewarded-награды.", error);
+              }
+            }
+            complete(isRewardGranted);
+          },
+          onError: (error) => {
+            console.warn("Не удалось показать rewarded-видео.", error);
+            complete(false);
+          },
+        },
+      });
+    } catch (error) {
+      console.warn("Ошибка запуска rewarded-видео.", error);
+      complete(false);
+    }
+  });
+}
+
+function recordFinishedMatchAndMaybeShowAd() {
+  monetizationState.finishedMatchesSinceLastInterstitial += 1;
+  saveGameState();
+
+  if (!canShowInterstitialNow()) {
+    return;
+  }
+
+  window.setTimeout(() => {
+    if (!canShowInterstitialNow()) {
+      return;
+    }
+
+    showInterstitialAd("after-match");
+  }, 240);
+}
+
 function isGameScreenActive() {
   const activeScreenId = getActiveScreenId();
   return activeScreenId === "friendGameScreen" || activeScreenId === "botGameScreen";
 }
 
 function shouldGameplayBeActive() {
-  return isGameScreenActive() && isPortraitOrientation() && !document.hidden;
+  return isGameScreenActive() && isPortraitOrientation() && !document.hidden && !isAdPauseActive;
 }
 
 function syncPlatformGameplayState() {
@@ -672,6 +908,15 @@ function normalizeScreenState(activeScreen) {
     : "startScreen";
 }
 
+function normalizeMonetizationState(rawMonetizationState) {
+  return {
+    finishedMatchesSinceLastInterstitial: getSafeScore(rawMonetizationState?.finishedMatchesSinceLastInterstitial),
+    lastInterstitialAt: Number.isFinite(Number(rawMonetizationState?.lastInterstitialAt))
+      ? Math.max(0, Number(rawMonetizationState.lastInterstitialAt))
+      : 0,
+  };
+}
+
 function getGameState() {
   return {
     version: STORAGE_VERSION,
@@ -686,6 +931,10 @@ function getGameState() {
       statusHint: statusHint?.textContent ?? "Сделайте ход на поле 3×3",
       statusPanelState: statusPanel?.dataset.state ?? "turn",
       matchState: friendGameScreen?.dataset.matchState ?? "active",
+    },
+    monetization: {
+      finishedMatchesSinceLastInterstitial: monetizationState.finishedMatchesSinceLastInterstitial,
+      lastInterstitialAt: monetizationState.lastInterstitialAt,
     },
     botGame: {
       state: [...botGame.state],
@@ -814,6 +1063,7 @@ function restoreGameState(state) {
   const safeState = state && typeof state === "object" ? state : {};
   const normalizedFriendGame = normalizeFriendGameState(safeState.friendGame);
   const normalizedBotGame = normalizeBotGameState(safeState.botGame);
+  const normalizedMonetization = normalizeMonetizationState(safeState.monetization);
   const safeActiveScreen = normalizeScreenState(safeState.activeScreen);
 
   friendGame.scores = normalizedFriendGame.scores;
@@ -842,6 +1092,9 @@ function restoreGameState(state) {
 
   restoreFriendBoardUI();
   restartBtn?.classList.toggle("game-over", friendGame.isFinished);
+
+  monetizationState.finishedMatchesSinceLastInterstitial = normalizedMonetization.finishedMatchesSinceLastInterstitial;
+  monetizationState.lastInterstitialAt = normalizedMonetization.lastInterstitialAt;
 
   botGame.scores = normalizedBotGame.scores;
   refreshBotScores();
@@ -957,6 +1210,7 @@ function finishFriendGame(message, line = null) {
 
   restartBtn?.classList.add("game-over");
   saveGameState();
+  recordFinishedMatchAndMaybeShowAd();
 }
 
 function handleFriendCellClick(event) {
@@ -1012,6 +1266,7 @@ function canBotActNow() {
     !document.hidden &&
     isPortraitOrientation() &&
     !isModalOpen &&
+    !isAdPauseActive &&
     getActiveScreenId() === "botGameScreen" &&
     !botGame.isFinished &&
     botGame.turn === "bot"
@@ -1219,6 +1474,7 @@ function finishBotGame(resultMessage, line = null) {
 
   botRestartBtn?.classList.add("game-over");
   saveGameState();
+  recordFinishedMatchAndMaybeShowAd();
 }
 
 
@@ -1433,6 +1689,26 @@ function openBotGameWithDifficulty(level) {
   saveGameState();
 }
 
+function handleRewardedQuickRematch(mode) {
+  const isFriendMode = mode === "friend";
+  const targetScreenId = isFriendMode ? "friendGameScreen" : "botGameScreen";
+
+  if (getActiveScreenId() !== targetScreenId || isModalOpen || isLandscapeLocked) {
+    return;
+  }
+
+  const applyReward = () => {
+    if (isFriendMode) {
+      resetFriendBoard();
+      return;
+    }
+
+    resetBotBoard({ keepStarter: false });
+  };
+
+  showRewardedAd(applyReward);
+}
+
 bindAction(startBtn, () => {
   showScreen(menuScreen);
 });
@@ -1495,6 +1771,8 @@ bindAction(restartBtn, resetFriendBoard);
 bindAction(botRestartBtn, () => resetBotBoard({ keepStarter: false }));
 bindAction(resetScoreBtn, resetFriendScores);
 bindAction(botResetScoreBtn, resetBotScores);
+bindAction(friendRewardedRestartBtn, () => handleRewardedQuickRematch("friend"));
+bindAction(botRewardedRestartBtn, () => handleRewardedQuickRematch("bot"));
 
 board?.addEventListener("click", handleFriendCellClick);
 botBoard?.addEventListener("click", handleBotCellClick);
@@ -1545,6 +1823,7 @@ async function bootstrapGame() {
   closeExitConfirmModal();
 
   await initYandexGamesSdk();
+  updateRewardedButtonsState();
 
   const savedState = loadGameState();
 
@@ -1566,6 +1845,7 @@ async function bootstrapGame() {
   // и только затем сообщаем платформе о готовности игры.
   window.requestAnimationFrame(() => {
     updateOrientationState();
+    updateRewardedButtonsState();
     syncPlatformGameplayState();
     markGameReadyWhenPossible();
   });
