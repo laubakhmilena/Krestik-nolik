@@ -82,6 +82,8 @@ body {
   align-items: center;
   justify-content: center;
   overflow: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
   isolation: isolate;
 }
@@ -607,6 +609,7 @@ body {
 .orientation-card {
   width: min(360px, 100%);
   max-height: 100%;
+  overflow: auto;
   border-radius: 20px;
   border: 1px solid rgba(255, 255, 255, 0.26);
   background: rgba(255, 255, 255, 0.12);
@@ -662,6 +665,7 @@ body {
 .confirm-modal {
   width: min(340px, 100%);
   max-height: 100%;
+  overflow: auto;
   border-radius: 18px;
   border: 1px solid rgba(255, 255, 255, 0.46);
   background: rgba(255, 255, 255, 0.9);
@@ -727,7 +731,11 @@ body {
 
 @media (max-width: 480px) {
   .app-shell {
-    padding: 8px;
+    padding:
+      max(8px, var(--safe-top))
+      max(8px, var(--safe-right))
+      max(8px, var(--safe-bottom))
+      max(8px, var(--safe-left));
   }
 
   .screen {
