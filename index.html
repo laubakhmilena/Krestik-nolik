@@ -3,23 +3,24 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no" />
+    <meta name="theme-color" content="#6d67ff" />
     <title>Крестики-нолики</title>
     <link rel="stylesheet" href="style.css" />
   </head>
-  <body>
+  <body data-booting="true">
     <main class="app-shell" id="appShell" aria-hidden="false">
       <section class="screen start-screen" id="startScreen" aria-labelledby="startTitle">
         <span class="shape shape-x" aria-hidden="true">✕</span>
         <span class="shape shape-o" aria-hidden="true">◯</span>
 
         <div class="content start-content">
-          <p class="eyebrow">Классическая игра для двоих</p>
-          <h1 class="title" id="startTitle">Крестики-нолики</h1>
-          <p class="subtitle">
+          <p class="eyebrow" data-i18n="start.eyebrow">Классическая игра для двоих</p>
+          <h1 class="title" id="startTitle" data-i18n="start.title">Крестики-нолики</h1>
+          <p class="subtitle" data-i18n="start.subtitle">
             Выбирайте режим и начинайте весёлую партию в обновлённом ярком интерфейсе.
           </p>
 
-          <button class="btn btn-primary cta-btn" id="startBtn" type="button">Начать играть</button>
+          <button class="btn btn-primary cta-btn" id="startBtn" type="button" data-i18n="start.cta">Начать играть</button>
         </div>
       </section>
 
@@ -28,22 +29,22 @@
         <span class="shape shape-o second" aria-hidden="true">◯</span>
 
         <div class="content menu-content">
-          <h2 class="title menu-title" id="menuTitle">Выберите режим игры</h2>
+          <h2 class="title menu-title" id="menuTitle" data-i18n="menu.title">Выберите режим игры</h2>
 
           <div class="mode-grid">
             <button class="mode-card mode-card-ready" id="friendModeBtn" type="button">
-              <span class="mode-card-title">Игра с другом</span>
-              <span class="mode-card-text">Играть вдвоём на одном устройстве</span>
+              <span class="mode-card-title" data-i18n="menu.friendTitle">Игра с другом</span>
+              <span class="mode-card-text" data-i18n="menu.friendText">Играть вдвоём на одном устройстве</span>
             </button>
 
             <button class="mode-card mode-card-ready bot-mode-card" id="botModeBtn" type="button">
-              <span class="mode-card-badge">Новое</span>
-              <span class="mode-card-title">Игра с ботом</span>
-              <span class="mode-card-text">Сразитесь с ИИ на трёх уровнях сложности</span>
+              <span class="mode-card-badge" data-i18n="menu.botBadge">Новое</span>
+              <span class="mode-card-title" data-i18n="menu.botTitle">Игра с ботом</span>
+              <span class="mode-card-text" data-i18n="menu.botText">Сразитесь с ИИ на трёх уровнях сложности</span>
             </button>
           </div>
 
-          <button class="btn btn-secondary back-btn" id="backBtn" type="button">Назад</button>
+          <button class="btn btn-secondary back-btn" id="backBtn" type="button" data-i18n="common.back">Назад</button>
         </div>
       </section>
 
@@ -56,15 +57,15 @@
         <span class="shape shape-o second" aria-hidden="true">◯</span>
 
         <div class="content bot-difficulty-content">
-          <h2 class="title menu-title" id="botDifficultyTitle">Выберите уровень сложности</h2>
+          <h2 class="title menu-title" id="botDifficultyTitle" data-i18n="difficulty.title">Выберите уровень сложности</h2>
 
-          <div class="difficulty-grid" role="group" aria-label="Уровень сложности">
-            <button class="difficulty-btn" id="easyLevelBtn" type="button">Легко</button>
-            <button class="difficulty-btn" id="mediumLevelBtn" type="button">Средне</button>
-            <button class="difficulty-btn" id="hardLevelBtn" type="button">Сложно</button>
+          <div class="difficulty-grid" role="group" aria-label="Уровень сложности" data-i18n-aria-label="difficulty.groupAria">
+            <button class="difficulty-btn" id="easyLevelBtn" type="button" data-i18n="difficulty.easy">Легко</button>
+            <button class="difficulty-btn" id="mediumLevelBtn" type="button" data-i18n="difficulty.medium">Средне</button>
+            <button class="difficulty-btn" id="hardLevelBtn" type="button" data-i18n="difficulty.hard">Сложно</button>
           </div>
 
-          <button class="btn btn-secondary back-btn" id="botDifficultyBackBtn" type="button">Назад</button>
+          <button class="btn btn-secondary back-btn" id="botDifficultyBackBtn" type="button" data-i18n="common.back">Назад</button>
         </div>
       </section>
 
@@ -77,15 +78,15 @@
         <span class="shape shape-o second" aria-hidden="true">◯</span>
 
         <div class="content friend-game-content">
-          <h2 class="title game-title" id="friendGameTitle">Игра с другом</h2>
+          <h2 class="title game-title" id="friendGameTitle" data-i18n="friend.title">Игра с другом</h2>
 
           <div class="status-panel" id="statusPanel" data-state="turn" aria-live="polite">
-            <p class="status-caption">Статус партии</p>
+            <p class="status-caption" data-i18n="game.statusCaption">Статус партии</p>
             <p class="game-status" id="statusText">Ход: X</p>
             <p class="status-hint" id="statusHint">Сделайте ход на поле 3×3</p>
           </div>
 
-          <div class="score-board" id="scoreBoard" aria-label="Счёт матчей">
+          <div class="score-board" id="scoreBoard" aria-label="Счёт матчей" data-i18n-aria-label="friend.scoreboardAria">
             <div class="score-item">
               <span class="score-label">X</span>
               <span class="score-value" id="scoreX">0</span>
@@ -95,12 +96,12 @@
               <span class="score-value" id="scoreO">0</span>
             </div>
             <div class="score-item">
-              <span class="score-label">Ничьи</span>
+              <span class="score-label" data-i18n="game.draws">Ничьи</span>
               <span class="score-value" id="scoreDraws">0</span>
             </div>
           </div>
 
-          <div class="board" id="board" role="grid" aria-label="Поле крестиков-ноликов">
+          <div class="board" id="board" role="grid" aria-label="Поле крестиков-ноликов" data-i18n-aria-label="friend.boardAria">
             <button class="cell" type="button" data-index="0" aria-label="Клетка 1"></button>
             <button class="cell" type="button" data-index="1" aria-label="Клетка 2"></button>
             <button class="cell" type="button" data-index="2" aria-label="Клетка 3"></button>
@@ -113,12 +114,12 @@
           </div>
 
           <div class="game-actions">
-            <button class="btn btn-primary restart-btn" id="restartBtn" type="button">Играть снова</button>
-            <button class="btn btn-secondary rewarded-btn" id="friendRewardedRestartBtn" type="button">
+            <button class="btn btn-primary restart-btn" id="restartBtn" type="button" data-i18n="game.restart">Играть снова</button>
+            <button class="btn btn-secondary rewarded-btn" id="friendRewardedRestartBtn" type="button" data-i18n="game.rewardedRestart">
               Реклама за быстрый реванш
             </button>
-            <button class="btn btn-secondary menu-btn" id="backToMenuBtn" type="button">Назад в меню</button>
-            <button class="btn btn-secondary score-reset-btn" id="resetScoreBtn" type="button">
+            <button class="btn btn-secondary menu-btn" id="backToMenuBtn" type="button" data-i18n="game.backToMenu">Назад в меню</button>
+            <button class="btn btn-secondary score-reset-btn" id="resetScoreBtn" type="button" data-i18n="game.resetScore">
               Сбросить счёт
             </button>
           </div>
@@ -130,31 +131,31 @@
         <span class="shape shape-o second" aria-hidden="true">◯</span>
 
         <div class="content friend-game-content">
-          <h2 class="title game-title" id="botGameTitle">Игра с ботом</h2>
+          <h2 class="title game-title" id="botGameTitle" data-i18n="bot.title">Игра с ботом</h2>
           <p class="difficulty-label" id="botDifficultyLabel" data-level="easy">Сложность: Легко</p>
 
           <div class="status-panel" id="botStatusPanel" data-state="turn" aria-live="polite">
-            <p class="status-caption">Статус партии</p>
+            <p class="status-caption" data-i18n="game.statusCaption">Статус партии</p>
             <p class="game-status" id="botStatusText">Ваш ход: X</p>
             <p class="status-hint" id="botStatusHint">Сделайте ход на поле 3×3</p>
           </div>
 
-          <div class="score-board" id="botScoreBoard" aria-label="Счёт матчей с ботом">
+          <div class="score-board" id="botScoreBoard" aria-label="Счёт матчей с ботом" data-i18n-aria-label="bot.scoreboardAria">
             <div class="score-item">
-              <span class="score-label">Вы (X)</span>
+              <span class="score-label" data-i18n="bot.playerScoreLabel">Вы (X)</span>
               <span class="score-value" id="botScoreX">0</span>
             </div>
             <div class="score-item">
-              <span class="score-label">Бот (O)</span>
+              <span class="score-label" data-i18n="bot.botScoreLabel">Бот (O)</span>
               <span class="score-value" id="botScoreO">0</span>
             </div>
             <div class="score-item">
-              <span class="score-label">Ничьи</span>
+              <span class="score-label" data-i18n="game.draws">Ничьи</span>
               <span class="score-value" id="botScoreDraws">0</span>
             </div>
           </div>
 
-          <div class="board" id="botBoard" role="grid" aria-label="Поле крестиков-ноликов с ботом">
+          <div class="board" id="botBoard" role="grid" aria-label="Поле крестиков-ноликов с ботом" data-i18n-aria-label="bot.boardAria">
             <button class="cell" type="button" data-index="0" aria-label="Клетка 1"></button>
             <button class="cell" type="button" data-index="1" aria-label="Клетка 2"></button>
             <button class="cell" type="button" data-index="2" aria-label="Клетка 3"></button>
@@ -167,15 +168,15 @@
           </div>
 
           <div class="game-actions">
-            <button class="btn btn-primary restart-btn" id="botRestartBtn" type="button">Играть снова</button>
-            <button class="btn btn-secondary rewarded-btn" id="botRewardedRestartBtn" type="button">
+            <button class="btn btn-primary restart-btn" id="botRestartBtn" type="button" data-i18n="game.restart">Играть снова</button>
+            <button class="btn btn-secondary rewarded-btn" id="botRewardedRestartBtn" type="button" data-i18n="game.rewardedRestart">
               Реклама за быстрый реванш
             </button>
-            <button class="btn btn-secondary menu-btn" id="botChangeDifficultyBtn" type="button">
+            <button class="btn btn-secondary menu-btn" id="botChangeDifficultyBtn" type="button" data-i18n="bot.changeDifficulty">
               Сменить сложность
             </button>
-            <button class="btn btn-secondary menu-btn" id="botBackToMenuBtn" type="button">Назад в меню</button>
-            <button class="btn btn-secondary score-reset-btn" id="botResetScoreBtn" type="button">
+            <button class="btn btn-secondary menu-btn" id="botBackToMenuBtn" type="button" data-i18n="game.backToMenu">Назад в меню</button>
+            <button class="btn btn-secondary score-reset-btn" id="botResetScoreBtn" type="button" data-i18n="game.resetScore">
               Сбросить счёт
             </button>
           </div>
@@ -185,11 +186,11 @@
 
     <div class="modal-overlay hidden" id="modalOverlay" aria-hidden="true">
       <div class="confirm-modal" id="exitConfirmModal" role="dialog" aria-modal="true" aria-labelledby="exitModalTitle">
-        <h3 class="confirm-modal-title" id="exitModalTitle">Выйти в меню?</h3>
-        <p class="confirm-modal-text">Вы сможете продолжить текущую партию позже</p>
+        <h3 class="confirm-modal-title" id="exitModalTitle" data-i18n="modal.exitTitle">Выйти в меню?</h3>
+        <p class="confirm-modal-text" data-i18n="modal.exitText">Вы сможете продолжить текущую партию позже</p>
         <div class="confirm-modal-actions">
-          <button class="btn btn-secondary modal-cancel-btn" id="cancelExitBtn" type="button">Остаться</button>
-          <button class="btn modal-confirm-btn" id="confirmExitBtn" type="button">Выйти</button>
+          <button class="btn btn-secondary modal-cancel-btn" id="cancelExitBtn" type="button" data-i18n="modal.cancel">Остаться</button>
+          <button class="btn modal-confirm-btn" id="confirmExitBtn" type="button" data-i18n="modal.confirm">Выйти</button>
         </div>
       </div>
     </div>
@@ -205,8 +206,8 @@
     >
       <div class="orientation-card">
         <span class="orientation-icon" aria-hidden="true">📱↻</span>
-        <p class="orientation-title">Поверните устройство</p>
-        <p class="orientation-text">Игра доступна только в вертикальном режиме</p>
+        <p class="orientation-title" data-i18n="orientation.title">Поверните устройство</p>
+        <p class="orientation-text" data-i18n="orientation.text">Игра доступна только в вертикальном режиме</p>
       </div>
     </div>
 

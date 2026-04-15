@@ -42,7 +42,7 @@ const exitConfirmModal = document.getElementById("exitConfirmModal");
 const confirmExitBtn = document.getElementById("confirmExitBtn");
 const cancelExitBtn = document.getElementById("cancelExitBtn");
 const STORAGE_KEY = "ticTacToeState";
-const STORAGE_VERSION = 1;
+const STORAGE_VERSION = 2;
 const YANDEX_SDK_URL = "https://yandex.ru/games/sdk/v2";
 
 const winningLines = [
@@ -60,10 +60,211 @@ const BOT_THINK_DELAY_MS = 450;
 const INTERSTITIAL_MIN_MATCHES = 2;
 const INTERSTITIAL_MIN_INTERVAL_MS = 90_000;
 const difficultyMeta = {
-  easy: { label: "Легко" },
-  medium: { label: "Средне" },
-  hard: { label: "Сложно" },
+  easy: { translationKey: "difficulty.easy" },
+  medium: { translationKey: "difficulty.medium" },
+  hard: { translationKey: "difficulty.hard" },
 };
+
+const translations = {
+  ru: {
+    document: {
+      title: "Крестики-нолики",
+    },
+    common: {
+      back: "Назад",
+    },
+    start: {
+      eyebrow: "Классическая игра для двоих",
+      title: "Крестики-нолики",
+      subtitle: "Выбирайте режим и начинайте весёлую партию в обновлённом ярком интерфейсе.",
+      cta: "Начать играть",
+    },
+    menu: {
+      title: "Выберите режим игры",
+      friendTitle: "Игра с другом",
+      friendText: "Играть вдвоём на одном устройстве",
+      botBadge: "Новое",
+      botTitle: "Игра с ботом",
+      botText: "Сразитесь с ИИ на трёх уровнях сложности",
+    },
+    difficulty: {
+      title: "Выберите уровень сложности",
+      groupAria: "Уровень сложности",
+      easy: "Легко",
+      medium: "Средне",
+      hard: "Сложно",
+    },
+    friend: {
+      title: "Игра с другом",
+      scoreboardAria: "Счёт матчей",
+      boardAria: "Поле крестиков-ноликов",
+    },
+    bot: {
+      title: "Игра с ботом",
+      scoreboardAria: "Счёт матчей с ботом",
+      boardAria: "Поле крестиков-ноликов с ботом",
+      playerScoreLabel: "Вы (X)",
+      botScoreLabel: "Бот (O)",
+      changeDifficulty: "Сменить сложность",
+      difficultyLabel: "Сложность: {label}",
+    },
+    game: {
+      statusCaption: "Статус партии",
+      draws: "Ничьи",
+      restart: "Играть снова",
+      rewardedRestart: "Реклама за быстрый реванш",
+      backToMenu: "Назад в меню",
+      resetScore: "Сбросить счёт",
+    },
+    modal: {
+      exitTitle: "Выйти в меню?",
+      exitText: "Вы сможете продолжить текущую партию позже",
+      cancel: "Остаться",
+      confirm: "Выйти",
+    },
+    orientation: {
+      title: "Поверните устройство",
+      text: "Игра доступна только в вертикальном режиме",
+    },
+    ads: {
+      rewardedPrefix: "▶ Реклама",
+      rewardedAriaAvailable: "Посмотреть рекламу и получить быстрый реванш",
+      rewardedAriaUnavailable: "Rewarded-реклама сейчас недоступна",
+    },
+    status: {
+      friendTurn: "Ход: {symbol}",
+      playerTurn: "Ваш ход: {symbol}",
+      botThinking: "Бот думает...",
+      friendWinner: "Победил {symbol}",
+      botWinner: "Победил бот",
+      playerWinner: "Победили вы",
+      draw: "Ничья",
+    },
+    hint: {
+      makeMove: "Сделайте ход на поле 3×3",
+      matchFinished: "Партия завершена. Нажмите «Играть снова», чтобы начать новую.",
+      friendDraw: "Ничья. Попробуйте ещё раз в новой партии.",
+      botDraw: "Ничья. Попробуйте другую стратегию.",
+      botThinking: "Подождите, бот выбирает ход",
+      resumeAfterReturn: "Продолжите игру после возврата",
+      resumeToLetBotMove: "Продолжите игру, чтобы бот сделал ход",
+      botStarts: "Бот начинает партию",
+    },
+    aria: {
+      cell: "Клетка {index}",
+    },
+  },
+  en: {
+    document: {
+      title: "Tic-Tac-Toe",
+    },
+    common: {
+      back: "Back",
+    },
+    start: {
+      eyebrow: "Classic game for two",
+      title: "Tic-Tac-Toe",
+      subtitle: "Choose a mode and jump into a bright, polished match right away.",
+      cta: "Start Playing",
+    },
+    menu: {
+      title: "Choose Game Mode",
+      friendTitle: "Play with a Friend",
+      friendText: "Two players on the same device",
+      botBadge: "New",
+      botTitle: "Play vs Bot",
+      botText: "Challenge the AI on three difficulty levels",
+    },
+    difficulty: {
+      title: "Choose Difficulty",
+      groupAria: "Difficulty level",
+      easy: "Easy",
+      medium: "Medium",
+      hard: "Hard",
+    },
+    friend: {
+      title: "Play with a Friend",
+      scoreboardAria: "Match score",
+      boardAria: "Tic-tac-toe board",
+    },
+    bot: {
+      title: "Play vs Bot",
+      scoreboardAria: "Match score against the bot",
+      boardAria: "Tic-tac-toe board against the bot",
+      playerScoreLabel: "You (X)",
+      botScoreLabel: "Bot (O)",
+      changeDifficulty: "Change Difficulty",
+      difficultyLabel: "Difficulty: {label}",
+    },
+    game: {
+      statusCaption: "Match Status",
+      draws: "Draws",
+      restart: "Play Again",
+      rewardedRestart: "Watch an ad for a quick rematch",
+      backToMenu: "Back to Menu",
+      resetScore: "Reset Score",
+    },
+    modal: {
+      exitTitle: "Leave to menu?",
+      exitText: "You can continue the current match later.",
+      cancel: "Stay",
+      confirm: "Leave",
+    },
+    orientation: {
+      title: "Rotate Your Device",
+      text: "This game is available only in portrait mode",
+    },
+    ads: {
+      rewardedPrefix: "▶ Ad",
+      rewardedAriaAvailable: "Watch an ad and get a quick rematch",
+      rewardedAriaUnavailable: "Rewarded ads are unavailable right now",
+    },
+    status: {
+      friendTurn: "Turn: {symbol}",
+      playerTurn: "Your turn: {symbol}",
+      botThinking: "Bot is thinking...",
+      friendWinner: "{symbol} wins",
+      botWinner: "Bot wins",
+      playerWinner: "You win",
+      draw: "Draw",
+    },
+    hint: {
+      makeMove: "Make a move on the 3×3 board",
+      matchFinished: "The match is over. Tap “Play Again” to start a new one.",
+      friendDraw: "It's a draw. Try again in a new match.",
+      botDraw: "It's a draw. Try a different strategy.",
+      botThinking: "Please wait while the bot chooses a move",
+      resumeAfterReturn: "Continue the game after you come back",
+      resumeToLetBotMove: "Continue the game so the bot can make its move",
+      botStarts: "The bot starts this round",
+    },
+    aria: {
+      cell: "Cell {index}",
+    },
+  },
+};
+
+function resolveLanguage(rawLanguage) {
+  const normalized = String(rawLanguage ?? "").trim().toLowerCase();
+
+  if (normalized.startsWith("en")) {
+    return "en";
+  }
+
+  if (normalized.startsWith("ru")) {
+    return "ru";
+  }
+
+  return "ru";
+}
+
+function getFallbackLanguage() {
+  if (typeof navigator === "undefined") {
+    return resolveLanguage(document.documentElement.lang);
+  }
+
+  return resolveLanguage(navigator.languages?.[0] ?? navigator.language ?? document.documentElement.lang);
+}
 
 let pendingExitTarget = null;
 let isRestoringState = false;
@@ -85,6 +286,13 @@ let activeAdType = null;
 let isInterstitialPending = false;
 let isRewardedPending = false;
 let interstitialTimerId = null;
+let activeLanguage = getFallbackLanguage();
+let sdkLanguage = null;
+let sdkInitCompleted = false;
+let layoutSyncFrameId = null;
+let stickyBannerSyncPromise = null;
+
+const clickLockMap = new WeakMap();
 
 const friendGame = {
   boardEl: board,
@@ -116,13 +324,216 @@ const monetizationState = {
   lastInterstitialAt: 0,
 };
 
+function getTranslationValue(key, language = activeLanguage) {
+  return key.split(".").reduce((value, part) => (value && typeof value === "object" ? value[part] : undefined), translations[language]);
+}
+
+function t(key, values = {}, language = activeLanguage) {
+  const template = getTranslationValue(key, language) ?? getTranslationValue(key, "ru") ?? key;
+
+  if (typeof template !== "string") {
+    return String(template ?? key);
+  }
+
+  return template.replace(/\{(\w+)\}/g, (_, token) => String(values[token] ?? `{${token}}`));
+}
+
+function setTextIfPresent(element, value) {
+  if (element) {
+    element.textContent = value;
+  }
+}
+
+function updateBoardAriaLabels() {
+  [board, botBoard].forEach((boardEl) => {
+    boardEl?.querySelectorAll(".cell").forEach((cell) => {
+      const cellIndex = Number(cell.dataset.index) + 1;
+      cell.setAttribute("aria-label", t("aria.cell", { index: cellIndex }));
+    });
+  });
+}
+
+function applyStaticTranslations() {
+  document.querySelectorAll("[data-i18n]").forEach((element) => {
+    const translationKey = element.dataset.i18n;
+
+    if (!translationKey) {
+      return;
+    }
+
+    element.textContent = t(translationKey);
+  });
+
+  document.querySelectorAll("[data-i18n-aria-label]").forEach((element) => {
+    const translationKey = element.dataset.i18nAriaLabel;
+
+    if (!translationKey) {
+      return;
+    }
+
+    element.setAttribute("aria-label", t(translationKey));
+  });
+
+  [friendRewardedRestartBtn, botRewardedRestartBtn].forEach((button) => {
+    if (button) {
+      button.dataset.adPrefix = t("ads.rewardedPrefix");
+    }
+  });
+
+  updateBoardAriaLabels();
+}
+
+function getFriendTurnStatusPayload(player = friendGame.currentPlayer) {
+  return {
+    text: t("status.friendTurn", { symbol: player }),
+    hint: t("hint.makeMove"),
+    panelState: "turn",
+  };
+}
+
+function getFriendWinnerStatusPayload(player) {
+  return {
+    text: t("status.friendWinner", { symbol: player }),
+    hint: t("hint.matchFinished"),
+    panelState: "win",
+  };
+}
+
+function getDrawStatusPayload({ botMode = false } = {}) {
+  return {
+    text: t("status.draw"),
+    hint: t(botMode ? "hint.botDraw" : "hint.friendDraw"),
+    panelState: "draw",
+  };
+}
+
+function getBotPlayerTurnStatusPayload(player = botGame.playerSymbol) {
+  return {
+    text: t("status.playerTurn", { symbol: player }),
+    hint: t("hint.makeMove"),
+    panelState: "turn",
+  };
+}
+
+function getBotThinkingStatusPayload({ resumePending = false } = {}) {
+  return {
+    text: t("status.botThinking"),
+    hint: t(resumePending ? "hint.resumeToLetBotMove" : "hint.botThinking"),
+    panelState: "thinking",
+  };
+}
+
+function getBotStartsStatusPayload() {
+  return {
+    text: t("status.botThinking"),
+    hint: t("hint.botStarts"),
+    panelState: "thinking",
+  };
+}
+
+function getBotWinnerStatusPayload() {
+  return {
+    text: t("status.botWinner"),
+    hint: t("hint.matchFinished"),
+    panelState: "win",
+  };
+}
+
+function getPlayerWinnerStatusPayload() {
+  return {
+    text: t("status.playerWinner"),
+    hint: t("hint.matchFinished"),
+    panelState: "win",
+  };
+}
+
+function refreshCurrentStatuses() {
+  const friendWinner = getWinnerForState(friendGame.state);
+  const friendIsDraw = !friendWinner && getAvailableMoves(friendGame.state).length === 0;
+  if (friendWinner) {
+    updateStatus(statusPanel, statusText, statusHint, getFriendWinnerStatusPayload(friendWinner.winner));
+  } else if (friendGame.isFinished || friendIsDraw) {
+    updateStatus(statusPanel, statusText, statusHint, getDrawStatusPayload());
+  } else {
+    updateStatus(statusPanel, statusText, statusHint, getFriendTurnStatusPayload(friendGame.currentPlayer));
+  }
+
+  const botWinner = getWinnerForState(botGame.state);
+  const botIsDraw = !botWinner && getAvailableMoves(botGame.state).length === 0;
+  if (botWinner) {
+    updateStatus(
+      botStatusPanel,
+      botStatusText,
+      botStatusHint,
+      botWinner.winner === botGame.botSymbol ? getBotWinnerStatusPayload() : getPlayerWinnerStatusPayload()
+    );
+    return;
+  }
+
+  if (botGame.isFinished || botIsDraw) {
+    updateStatus(botStatusPanel, botStatusText, botStatusHint, getDrawStatusPayload({ botMode: true }));
+    return;
+  }
+
+  if (botGame.turn === "bot" || botGame.isBotThinking || botGame.shouldResumeBotMove) {
+    updateStatus(
+      botStatusPanel,
+      botStatusText,
+      botStatusHint,
+      getBotThinkingStatusPayload({
+        resumePending: botGame.shouldResumeBotMove || !canBotActNow(),
+      })
+    );
+    return;
+  }
+
+  updateStatus(botStatusPanel, botStatusText, botStatusHint, getBotPlayerTurnStatusPayload(botGame.playerSymbol));
+}
+
+function refreshLocalizedUi() {
+  document.documentElement.lang = activeLanguage;
+  document.title = t("document.title");
+  applyStaticTranslations();
+  updateDifficultyLabel();
+  refreshCurrentStatuses();
+  updateRewardedButtonsState();
+  scheduleAdaptiveLayoutSync();
+}
+
+function applyLanguage(language) {
+  const resolvedLanguage = resolveLanguage(language);
+
+  if (resolvedLanguage === activeLanguage && document.documentElement.lang === resolvedLanguage) {
+    refreshLocalizedUi();
+    return;
+  }
+
+  activeLanguage = resolvedLanguage;
+  refreshLocalizedUi();
+}
+
+function detectAndApplySdkLanguage(sdk) {
+  const environmentLanguage = sdk?.environment?.i18n?.lang;
+
+  if (!environmentLanguage) {
+    return;
+  }
+
+  sdkLanguage = resolveLanguage(environmentLanguage);
+  applyLanguage(sdkLanguage);
+}
+
+function markBootComplete() {
+  document.body?.removeAttribute("data-booting");
+}
+
 function disablePageScrollGestures() {
   const shouldAllowNativeScroll = (eventTarget) => {
     if (!(eventTarget instanceof Element)) {
       return false;
     }
 
-    const scrollContainer = eventTarget.closest(".screen, .confirm-modal, .orientation-card");
+    const scrollContainer = eventTarget.closest(".confirm-modal, .orientation-card");
     if (!scrollContainer) {
       return false;
     }
@@ -140,6 +551,8 @@ function disablePageScrollGestures() {
 
   document.addEventListener("touchmove", preventScroll, { passive: false });
   document.addEventListener("wheel", preventScroll, { passive: false });
+  document.addEventListener("gesturestart", preventScroll, { passive: false });
+  document.addEventListener("gesturechange", preventScroll, { passive: false });
   document.addEventListener("contextmenu", (event) => event.preventDefault());
 }
 
@@ -191,8 +604,10 @@ function applyOrientationState() {
       orientationOverlay?.focus({ preventScroll: true });
     }
     syncUiInteractivity();
+    scheduleAdaptiveLayoutSync();
     syncPlatformGameplayState();
     updateRewardedButtonsState();
+    syncStickyBannerState();
     return;
   }
 
@@ -207,6 +622,7 @@ function applyOrientationState() {
   }
 
   syncUiInteractivity();
+  scheduleAdaptiveLayoutSync();
 
   if (gameReadyPending) {
     markGameReadyWhenPossible();
@@ -214,6 +630,7 @@ function applyOrientationState() {
 
   syncPlatformGameplayState();
   updateRewardedButtonsState();
+  syncStickyBannerState();
   resumeBotTurnIfNeeded();
 }
 
@@ -245,16 +662,44 @@ function ensureYandexSdkScript() {
     const existingScript = document.querySelector(`script[src="${YANDEX_SDK_URL}"]`);
 
     if (existingScript instanceof HTMLScriptElement) {
-      existingScript.addEventListener("load", () => resolve(Boolean(window.YaGames?.init)), { once: true });
-      existingScript.addEventListener("error", () => resolve(false), { once: true });
+      if (window.YaGames?.init) {
+        resolve(true);
+        return;
+      }
+
+      if (existingScript.dataset.sdkLoadState === "error") {
+        resolve(false);
+        return;
+      }
+
+      existingScript.addEventListener(
+        "load",
+        () => {
+          existingScript.dataset.sdkLoadState = "loaded";
+          resolve(Boolean(window.YaGames?.init));
+        },
+        { once: true }
+      );
+      existingScript.addEventListener(
+        "error",
+        () => {
+          existingScript.dataset.sdkLoadState = "error";
+          resolve(false);
+        },
+        { once: true }
+      );
       return;
     }
 
     const sdkScript = document.createElement("script");
     sdkScript.src = YANDEX_SDK_URL;
     sdkScript.async = true;
-    sdkScript.onload = () => resolve(Boolean(window.YaGames?.init));
+    sdkScript.onload = () => {
+      sdkScript.dataset.sdkLoadState = "loaded";
+      resolve(Boolean(window.YaGames?.init));
+    };
     sdkScript.onerror = () => {
+      sdkScript.dataset.sdkLoadState = "error";
       console.warn("Не удалось загрузить SDK Яндекс Игр, продолжаем без платформенных API.");
       resolve(false);
     };
@@ -273,23 +718,29 @@ async function initYandexGamesSdk() {
 
   sdkInitPromise = (async () => {
     if (typeof window === "undefined") {
+      sdkInitCompleted = true;
       return null;
     }
 
     const sdkScriptReady = await ensureYandexSdkScript();
     if (!sdkScriptReady || !window.YaGames?.init) {
+      sdkInitCompleted = true;
       return null;
     }
 
     try {
       yandexGamesSdk = await window.YaGames.init();
       sdkInitialized = true;
+      detectAndApplySdkLanguage(yandexGamesSdk);
+      await syncStickyBannerState();
       return yandexGamesSdk;
     } catch (error) {
       console.warn("SDK Яндекс Игр не инициализирован, продолжаем в гостевом режиме.", error);
       yandexGamesSdk = null;
       sdkInitialized = false;
       return null;
+    } finally {
+      sdkInitCompleted = true;
     }
   })();
 
@@ -306,6 +757,33 @@ function getAdvertisementApi() {
   }
 
   return yandexGamesSdk?.features?.AdvertisementAPI ?? yandexGamesSdk?.adv ?? null;
+}
+
+async function syncStickyBannerState() {
+  const adApi = getAdvertisementApi();
+  if (!adApi?.getBannerAdvStatus || !adApi?.hideBannerAdv) {
+    return;
+  }
+
+  if (stickyBannerSyncPromise) {
+    return stickyBannerSyncPromise;
+  }
+
+  stickyBannerSyncPromise = (async () => {
+    try {
+      const bannerStatus = await adApi.getBannerAdvStatus();
+
+      if (bannerStatus?.stickyAdvIsShowing) {
+        await adApi.hideBannerAdv();
+      }
+    } catch (error) {
+      console.warn("Не удалось синхронизировать sticky-баннер.", error);
+    } finally {
+      stickyBannerSyncPromise = null;
+    }
+  })();
+
+  return stickyBannerSyncPromise;
 }
 
 function isCurrentScreenSafeForAdBreak() {
@@ -370,13 +848,12 @@ function updateRewardedButtonsState() {
     }
 
     button.dataset.adEnabled = String(hasRewardedMethod);
+    button.dataset.adPrefix = t("ads.rewardedPrefix");
     button.disabled = !buttonStateById[button.id];
     button.hidden = !hasRewardedMethod;
     button.setAttribute(
       "aria-label",
-      hasRewardedMethod
-        ? "Посмотреть рекламу и получить быстрый реванш"
-        : "Rewarded-реклама сейчас недоступна"
+      hasRewardedMethod ? t("ads.rewardedAriaAvailable") : t("ads.rewardedAriaUnavailable")
     );
   });
 }
@@ -415,6 +892,7 @@ function pauseGameForAd(adType) {
   lockBoard(board);
   updateRewardedButtonsState();
   syncPlatformGameplayState();
+  syncStickyBannerState();
   saveGameState();
 }
 
@@ -440,6 +918,8 @@ function resumeGameAfterAd() {
 
   updateRewardedButtonsState();
   syncPlatformGameplayState();
+  syncStickyBannerState();
+  scheduleAdaptiveLayoutSync();
   saveGameState();
 }
 
@@ -585,9 +1065,24 @@ function isGameScreenActive() {
   return activeScreenId === "friendGameScreen" || activeScreenId === "botGameScreen";
 }
 
+function isGameplayMatchActive() {
+  const activeScreenId = getActiveScreenId();
+
+  if (activeScreenId === "friendGameScreen") {
+    return !friendGame.isFinished;
+  }
+
+  if (activeScreenId === "botGameScreen") {
+    return !botGame.isFinished;
+  }
+
+  return false;
+}
+
 function shouldGameplayBeActive() {
   return (
     isGameScreenActive() &&
+    isGameplayMatchActive() &&
     isPortraitOrientation() &&
     !document.hidden &&
     !isAdPauseActive &&
@@ -653,7 +1148,7 @@ function markGameReadyWhenPossible() {
   }
 
   if (!sdkInitialized || !yandexGamesSdk) {
-    gameReadyPending = true;
+    gameReadyPending = !sdkInitCompleted;
     return;
   }
 
@@ -690,11 +1185,20 @@ function markGameReadyWhenPossible() {
 function handlePageVisibilityChange() {
   syncPlatformGameplayState();
   updateRewardedButtonsState();
+  scheduleAdaptiveLayoutSync();
+
+  if (!document.hidden) {
+    syncStickyBannerState();
+  }
 
   if (document.hidden && botGame.turn === "bot") {
     botGame.shouldResumeBotMove = !botGame.isFinished;
     stopBotTurnTimer();
-    updateStatus(botStatusPanel, botStatusText, botStatusHint, "Бот думает...", "Продолжите игру после возврата");
+    updateStatus(botStatusPanel, botStatusText, botStatusHint, {
+      text: t("status.botThinking"),
+      hint: t("hint.resumeAfterReturn"),
+      panelState: "thinking",
+    });
     saveGameState();
     return;
   }
@@ -738,17 +1242,23 @@ function bindAction(button, handler) {
   }
 
   button.addEventListener("click", (event) => {
-    if (button.disabled) {
+    if (button.disabled || clickLockMap.get(button)) {
       return;
     }
 
-    button.disabled = true;
-    try {
-      handler(event);
-    } finally {
+    clickLockMap.set(button, true);
+
+    const releaseClickLock = () => {
       window.setTimeout(() => {
-        button.disabled = false;
+        clickLockMap.delete(button);
       }, 120);
+    };
+
+    try {
+      Promise.resolve(handler(event)).finally(releaseClickLock);
+    } catch (error) {
+      releaseClickLock();
+      throw error;
     }
   });
 }
@@ -773,6 +1283,7 @@ function showScreen(screenToShow) {
     }
 
     screen.classList.toggle("hidden", screen !== screenToShow);
+    screen.setAttribute("aria-hidden", screen === screenToShow ? "false" : "true");
   });
 
   closeExitConfirmModal({ keepPendingTarget: false });
@@ -786,8 +1297,10 @@ function showScreen(screenToShow) {
   }
 
   isShowingScreen = false;
+  scheduleAdaptiveLayoutSync();
   updateRewardedButtonsState();
   syncPlatformGameplayState();
+  syncStickyBannerState();
   resumeBotTurnIfNeeded();
 }
 
@@ -805,6 +1318,7 @@ function closeExitConfirmModal({ keepPendingTarget = false } = {}) {
   modalOverlay.setAttribute("aria-hidden", "true");
   isModalOpen = false;
   syncUiInteractivity();
+  scheduleAdaptiveLayoutSync();
   updateRewardedButtonsState();
   syncPlatformGameplayState();
   resumeBotTurnIfNeeded();
@@ -831,6 +1345,7 @@ function openExitConfirmModal(targetScreen) {
   cancelExitBtn?.focus({ preventScroll: true });
   stopBotTurnTimer();
   botGame.shouldResumeBotMove = botGame.turn === "bot" && !botGame.isFinished;
+  scheduleAdaptiveLayoutSync();
   updateRewardedButtonsState();
   syncPlatformGameplayState();
   saveGameState();
@@ -899,22 +1414,23 @@ function unlockBoard(boardEl, state) {
   });
 }
 
-function updateStatus(panelEl, textEl, hintEl, message, hint = "Сделайте ход на поле 3×3") {
-  if (textEl) {
-    textEl.textContent = message;
-  }
+function updateStatus(panelEl, textEl, hintEl, statusPayload) {
+  const safeStatus =
+    statusPayload && typeof statusPayload === "object"
+      ? statusPayload
+      : {
+          text: String(statusPayload ?? ""),
+          hint: t("hint.makeMove"),
+          panelState: "turn",
+        };
+
+  setTextIfPresent(textEl, safeStatus.text);
 
   if (panelEl) {
-    const isWin = message.startsWith("Победил") || message.startsWith("Победили");
-    const isDraw = message === "Ничья";
-    const isThinking = message === "Бот думает...";
-
-    panelEl.dataset.state = isWin ? "win" : isDraw ? "draw" : isThinking ? "thinking" : "turn";
+    panelEl.dataset.state = getSafePanelState(safeStatus.panelState);
   }
 
-  if (hintEl) {
-    hintEl.textContent = hint;
-  }
+  setTextIfPresent(hintEl, safeStatus.hint ?? t("hint.makeMove"));
 }
 
 function refreshFriendScores() {
@@ -932,6 +1448,46 @@ function getActiveScreenId() {
   }
 
   return activeScreen.id;
+}
+
+function scheduleAdaptiveLayoutSync() {
+  if (layoutSyncFrameId) {
+    window.cancelAnimationFrame(layoutSyncFrameId);
+  }
+
+  layoutSyncFrameId = window.requestAnimationFrame(() => {
+    layoutSyncFrameId = null;
+    syncAdaptiveLayout();
+  });
+}
+
+function syncBoardSize(contentEl, boardEl) {
+  if (!contentEl || !boardEl || contentEl.offsetParent === null) {
+    boardEl?.style.removeProperty("--board-size");
+    return;
+  }
+
+  const contentChildren = [...contentEl.children].filter((child) => child instanceof HTMLElement);
+  const rowGap = Number.parseFloat(window.getComputedStyle(contentEl).rowGap) || 0;
+  const otherBlocksHeight = contentChildren
+    .filter((child) => child !== boardEl)
+    .reduce((sum, child) => sum + child.getBoundingClientRect().height, 0);
+  const gapsHeight = Math.max(0, contentChildren.length - 1) * rowGap;
+  const availableHeight = Math.max(0, Math.floor(contentEl.clientHeight - otherBlocksHeight - gapsHeight));
+  const maxWidth = Math.max(0, Math.floor(Math.min(contentEl.clientWidth, 370)));
+  const nextBoardSize = Math.max(0, Math.min(maxWidth, availableHeight));
+
+  if (nextBoardSize > 0) {
+    boardEl.style.setProperty("--board-size", `${nextBoardSize}px`);
+    return;
+  }
+
+  boardEl.style.removeProperty("--board-size");
+}
+
+function syncAdaptiveLayout() {
+  syncBoardSize(friendGameScreen?.querySelector(".friend-game-content"), board);
+  syncBoardSize(botGameScreen?.querySelector(".friend-game-content"), botBoard);
 }
 
 function getSafeBoardState(boardState) {
@@ -1000,12 +1556,11 @@ function normalizeFriendGameState(rawFriendState) {
   const winningLine = winnerResult?.line ?? (hasValidWinningLine ? getSafeWinningLine(rawFriendState?.winningLine) : null);
   const isFinished = winnerResult ? true : isDraw ? true : Boolean(rawFriendState?.isFinished && getAvailableMoves(state).length === 0);
   const currentPlayer = rawFriendState?.currentPlayer === "O" ? "O" : "X";
-  const defaultStatus = winnerResult ? `Победил ${winnerResult.winner}` : isDraw ? "Ничья" : `Ход: ${currentPlayer}`;
-  const defaultHint = winnerResult
-    ? "Партия завершена. Нажмите «Играть снова», чтобы начать новую."
+  const statusPayload = winnerResult
+    ? getFriendWinnerStatusPayload(winnerResult.winner)
     : isDraw
-      ? "Ничья. Попробуйте ещё раз в новой партии."
-      : "Сделайте ход на поле 3×3";
+      ? getDrawStatusPayload()
+      : getFriendTurnStatusPayload(currentPlayer);
 
   return {
     state,
@@ -1017,15 +1572,9 @@ function normalizeFriendGameState(rawFriendState) {
       O: getSafeScore(rawFriendState?.scores?.O),
       draws: getSafeScore(rawFriendState?.scores?.draws),
     },
-    statusText:
-      typeof rawFriendState?.statusText === "string" && rawFriendState.statusText.trim()
-        ? rawFriendState.statusText
-        : defaultStatus,
-    statusHint:
-      typeof rawFriendState?.statusHint === "string" && rawFriendState.statusHint.trim()
-        ? rawFriendState.statusHint
-        : defaultHint,
-    statusPanelState: getSafePanelState(rawFriendState?.statusPanelState),
+    statusText: statusPayload.text,
+    statusHint: statusPayload.hint,
+    statusPanelState: statusPayload.panelState,
     matchState: getSafeMatchState(rawFriendState?.matchState, isFinished),
   };
 }
@@ -1043,23 +1592,15 @@ function normalizeBotGameState(rawBotState) {
   const isFinished = winnerResult ? true : isDraw ? true : Boolean(rawBotState?.isFinished && getAvailableMoves(state).length === 0);
   const isBotThinking = !isFinished && turn === "bot" ? Boolean(rawBotState?.isBotThinking) : false;
   const difficulty = getSafeDifficulty(rawBotState?.difficulty);
-  const defaultStatus = winnerResult
+  const statusPayload = winnerResult
     ? winnerResult.winner === botSymbol
-      ? "Победил бот"
-      : "Победили вы"
+      ? getBotWinnerStatusPayload()
+      : getPlayerWinnerStatusPayload()
     : isDraw
-      ? "Ничья"
+      ? getDrawStatusPayload({ botMode: true })
       : turn === "bot"
-        ? "Бот думает..."
-        : `Ваш ход: ${playerSymbol}`;
-  const defaultHint = winnerResult
-    ? "Партия завершена. Нажмите «Играть снова», чтобы начать новую."
-    : isDraw
-      ? "Ничья. Попробуйте другую стратегию."
-      : turn === "bot"
-        ? "Подождите, бот выбирает ход"
-        : "Сделайте ход на поле 3×3";
-  const defaultPanelState = winnerResult ? "win" : isDraw ? "draw" : turn === "bot" ? "thinking" : "turn";
+        ? getBotThinkingStatusPayload({ resumePending: isBotThinking })
+        : getBotPlayerTurnStatusPayload(playerSymbol);
 
   return {
     state,
@@ -1075,15 +1616,9 @@ function normalizeBotGameState(rawBotState) {
     botSymbol,
     turn: isFinished ? "player" : turn,
     isBotThinking,
-    statusText:
-      typeof rawBotState?.statusText === "string" && rawBotState.statusText.trim()
-        ? rawBotState.statusText
-        : defaultStatus,
-    statusHint:
-      typeof rawBotState?.statusHint === "string" && rawBotState.statusHint.trim()
-        ? rawBotState.statusHint
-        : defaultHint,
-    statusPanelState: getSafePanelState(rawBotState?.statusPanelState ?? defaultPanelState),
+    statusText: statusPayload.text,
+    statusHint: statusPayload.hint,
+    statusPanelState: statusPayload.panelState,
     matchState: getSafeMatchState(rawBotState?.matchState, isFinished),
   };
 }
@@ -1113,8 +1648,8 @@ function getGameState() {
       isFinished: friendGame.isFinished,
       winningLine: friendGame.winningLine ? [...friendGame.winningLine] : null,
       scores: { ...friendGame.scores },
-      statusText: statusText?.textContent ?? "Ход: X",
-      statusHint: statusHint?.textContent ?? "Сделайте ход на поле 3×3",
+      statusText: statusText?.textContent ?? t("status.friendTurn", { symbol: "X" }),
+      statusHint: statusHint?.textContent ?? t("hint.makeMove"),
       statusPanelState: statusPanel?.dataset.state ?? "turn",
       matchState: friendGameScreen?.dataset.matchState ?? "active",
     },
@@ -1132,8 +1667,8 @@ function getGameState() {
       botSymbol: botGame.botSymbol,
       turn: botGame.turn,
       isBotThinking: botGame.isBotThinking,
-      statusText: botStatusText?.textContent ?? `Ваш ход: ${botGame.playerSymbol}`,
-      statusHint: botStatusHint?.textContent ?? "Сделайте ход на поле 3×3",
+      statusText: botStatusText?.textContent ?? t("status.playerTurn", { symbol: botGame.playerSymbol }),
+      statusHint: botStatusHint?.textContent ?? t("hint.makeMove"),
       statusPanelState: botStatusPanel?.dataset.state ?? "turn",
       matchState: botGameScreen?.dataset.matchState ?? "active",
       difficultyLabel: botDifficultyLabel?.textContent ?? "",
@@ -1168,6 +1703,11 @@ function loadGameState() {
 
     const parsed = JSON.parse(rawState);
     if (!parsed || typeof parsed !== "object") {
+      clearSavedGameState();
+      return null;
+    }
+
+    if (Number.isFinite(Number(parsed.version)) && Number(parsed.version) > STORAGE_VERSION) {
       clearSavedGameState();
       return null;
     }
@@ -1329,6 +1869,7 @@ function restoreGameState(state) {
 
   botGame.shouldResumeBotMove = !botGame.isFinished && botGame.turn === "bot";
   botGame.isBotThinking = false;
+  refreshCurrentStatuses();
 
   isRestoringState = false;
   updateRewardedButtonsState();
@@ -1356,14 +1897,16 @@ function resetFriendBoard() {
     });
   }
 
-  updateStatus(statusPanel, statusText, statusHint, "Ход: X");
+  updateStatus(statusPanel, statusText, statusHint, getFriendTurnStatusPayload("X"));
 
   if (friendGameScreen) {
     friendGameScreen.dataset.matchState = "active";
   }
 
   restartBtn?.classList.remove("game-over");
+  scheduleAdaptiveLayoutSync();
   updateRewardedButtonsState();
+  syncPlatformGameplayState();
   saveGameState();
 }
 
@@ -1373,7 +1916,7 @@ function resetFriendScores() {
   saveGameState();
 }
 
-function finishFriendGame(message, line = null) {
+function finishFriendGame({ winnerSymbol = null, isDraw = false, line = null } = {}) {
   friendGame.isFinished = true;
   friendGame.winningLine = line;
 
@@ -1386,10 +1929,7 @@ function finishFriendGame(message, line = null) {
     statusPanel,
     statusText,
     statusHint,
-    message,
-    message === "Ничья"
-      ? "Ничья. Попробуйте ещё раз в новой партии."
-      : "Партия завершена. Нажмите «Играть снова», чтобы начать новую."
+    isDraw ? getDrawStatusPayload() : getFriendWinnerStatusPayload(winnerSymbol)
   );
 
   if (friendGameScreen) {
@@ -1397,7 +1937,9 @@ function finishFriendGame(message, line = null) {
   }
 
   restartBtn?.classList.add("game-over");
+  scheduleAdaptiveLayoutSync();
   updateRewardedButtonsState();
+  syncPlatformGameplayState();
   saveGameState();
   recordFinishedMatchAndMaybeShowAd();
 }
@@ -1424,19 +1966,19 @@ function handleFriendCellClick(event) {
   if (winnerResult) {
     friendGame.scores[winnerResult.winner] += 1;
     refreshFriendScores();
-    finishFriendGame(`Победил ${winnerResult.winner}`, winnerResult.line);
+    finishFriendGame({ winnerSymbol: winnerResult.winner, line: winnerResult.line });
     return;
   }
 
   if (getAvailableMoves(friendGame.state).length === 0) {
     friendGame.scores.draws += 1;
     refreshFriendScores();
-    finishFriendGame("Ничья");
+    finishFriendGame({ isDraw: true });
     return;
   }
 
   friendGame.currentPlayer = friendGame.currentPlayer === "X" ? "O" : "X";
-  updateStatus(statusPanel, statusText, statusHint, `Ход: ${friendGame.currentPlayer}`);
+  updateStatus(statusPanel, statusText, statusHint, getFriendTurnStatusPayload(friendGame.currentPlayer));
   saveGameState();
 }
 
@@ -1477,10 +2019,10 @@ function resumeBotTurnIfNeeded() {
 
 function updateDifficultyLabel() {
   const level = botGame.difficulty;
-  const label = difficultyMeta[level].label;
+  const label = t(difficultyMeta[level].translationKey);
 
   if (botDifficultyLabel) {
-    botDifficultyLabel.textContent = `Сложность: ${label}`;
+    botDifficultyLabel.textContent = t("bot.difficultyLabel", { label });
     botDifficultyLabel.dataset.level = level;
   }
 }
@@ -1636,7 +2178,7 @@ function setBotBoardInteractive(isInteractive) {
   unlockBoard(botBoard, botGame.state);
 }
 
-function finishBotGame(resultMessage, line = null) {
+function finishBotGame({ winner = null, isDraw = false, line = null } = {}) {
   botGame.isFinished = true;
   botGame.winningLine = line;
   botGame.shouldResumeBotMove = false;
@@ -1651,10 +2193,11 @@ function finishBotGame(resultMessage, line = null) {
     botStatusPanel,
     botStatusText,
     botStatusHint,
-    resultMessage,
-    resultMessage === "Ничья"
-      ? "Ничья. Попробуйте другую стратегию."
-      : "Партия завершена. Нажмите «Играть снова», чтобы начать новую."
+    isDraw
+      ? getDrawStatusPayload({ botMode: true })
+      : winner === "bot"
+        ? getBotWinnerStatusPayload()
+        : getPlayerWinnerStatusPayload()
   );
 
   if (botGameScreen) {
@@ -1662,7 +2205,9 @@ function finishBotGame(resultMessage, line = null) {
   }
 
   botRestartBtn?.classList.add("game-over");
+  scheduleAdaptiveLayoutSync();
   updateRewardedButtonsState();
+  syncPlatformGameplayState();
   saveGameState();
   recordFinishedMatchAndMaybeShowAd();
 }
@@ -1675,7 +2220,7 @@ function applyBotMove() {
 
   if (!canBotActNow()) {
     botGame.shouldResumeBotMove = true;
-    updateStatus(botStatusPanel, botStatusText, botStatusHint, "Бот думает...", "Продолжите игру, чтобы бот сделал ход");
+    updateStatus(botStatusPanel, botStatusText, botStatusHint, getBotThinkingStatusPayload({ resumePending: true }));
     setBotBoardInteractive(false);
     saveGameState();
     return;
@@ -1685,7 +2230,7 @@ function applyBotMove() {
   const activeGeneration = botGame.moveGeneration;
   botGame.isBotThinking = true;
   botGame.shouldResumeBotMove = false;
-  updateStatus(botStatusPanel, botStatusText, botStatusHint, "Бот думает...", "Подождите, бот выбирает ход");
+  updateStatus(botStatusPanel, botStatusText, botStatusHint, getBotThinkingStatusPayload());
   setBotBoardInteractive(false);
   saveGameState();
 
@@ -1734,14 +2279,14 @@ function applyBotMove() {
     if (winner) {
       botGame.scores.bot += 1;
       refreshBotScores();
-      finishBotGame("Победил бот", winner.line);
+      finishBotGame({ winner: "bot", line: winner.line });
       return;
     }
 
     if (getAvailableMoves(botGame.state).length === 0) {
       botGame.scores.draws += 1;
       refreshBotScores();
-      finishBotGame("Ничья");
+      finishBotGame({ isDraw: true });
       return;
     }
 
@@ -1753,8 +2298,7 @@ function applyBotMove() {
       botStatusPanel,
       botStatusText,
       botStatusHint,
-      `Ваш ход: ${botGame.playerSymbol}`,
-      "Сделайте ход на поле 3×3"
+      getBotPlayerTurnStatusPayload(botGame.playerSymbol)
     );
     saveGameState();
   }, BOT_THINK_DELAY_MS);
@@ -1788,20 +2332,16 @@ function resetBotBoard({ keepStarter = false } = {}) {
 
   botRestartBtn?.classList.remove("game-over");
   updateDifficultyLabel();
+  scheduleAdaptiveLayoutSync();
   updateRewardedButtonsState();
+  syncPlatformGameplayState();
 
   if (botGame.turn === "player") {
     setBotBoardInteractive(true);
-    updateStatus(
-      botStatusPanel,
-      botStatusText,
-      botStatusHint,
-      `Ваш ход: ${botGame.playerSymbol}`,
-      "Сделайте ход на поле 3×3"
-    );
+    updateStatus(botStatusPanel, botStatusText, botStatusHint, getBotPlayerTurnStatusPayload(botGame.playerSymbol));
   } else {
     setBotBoardInteractive(false);
-    updateStatus(botStatusPanel, botStatusText, botStatusHint, "Бот думает...", "Бот начинает партию");
+    updateStatus(botStatusPanel, botStatusText, botStatusHint, getBotStartsStatusPayload());
     botGame.shouldResumeBotMove = true;
     resumeBotTurnIfNeeded();
   }
@@ -1843,14 +2383,14 @@ function handleBotCellClick(event) {
   if (winner) {
     botGame.scores.player += 1;
     refreshBotScores();
-    finishBotGame("Победили вы", winner.line);
+    finishBotGame({ winner: "player", line: winner.line });
     return;
   }
 
   if (getAvailableMoves(botGame.state).length === 0) {
     botGame.scores.draws += 1;
     refreshBotScores();
-    finishBotGame("Ничья");
+    finishBotGame({ isDraw: true });
     return;
   }
 
@@ -1883,7 +2423,7 @@ function openBotGameWithDifficulty(level) {
 function handleRewardedQuickRematch(mode) {
   const isFriendMode = mode === "friend";
   if (!canUseRewardedRematch(mode)) {
-    return;
+    return Promise.resolve(false);
   }
 
   const applyReward = () => {
@@ -1895,7 +2435,7 @@ function handleRewardedQuickRematch(mode) {
     resetBotBoard({ keepStarter: false });
   };
 
-  showRewardedAd(applyReward);
+  return showRewardedAd(applyReward);
 }
 
 bindAction(startBtn, () => {
@@ -1998,6 +2538,12 @@ window.addEventListener("pagehide", () => {
     interstitialTimerId = null;
   }
 
+  try {
+    getAdvertisementApi()?.hideBannerAdv?.();
+  } catch (error) {
+    console.warn("Не удалось скрыть sticky-баннер при закрытии страницы", error);
+  }
+
   if (gameplayPlatformActive || gameplayDesiredActive) {
     const gameplayApi = getYandexGameplayApi();
 
@@ -2014,13 +2560,17 @@ window.addEventListener("pagehide", () => {
 
 async function bootstrapGame() {
   disablePageScrollGestures();
+  applyLanguage(activeLanguage);
   updateOrientationState();
   closeExitConfirmModal();
   updateRewardedButtonsState();
+  scheduleAdaptiveLayoutSync();
 
   initYandexGamesSdk().finally(() => {
     updateRewardedButtonsState();
     syncPlatformGameplayState();
+    syncStickyBannerState();
+    scheduleAdaptiveLayoutSync();
     markGameReadyWhenPossible();
   });
 
@@ -2033,12 +2583,14 @@ async function bootstrapGame() {
     resetFriendScores();
     resetBotBoard({ keepStarter: true });
     botGame.turn = "player";
-    updateStatus(botStatusPanel, botStatusText, botStatusHint, `Ваш ход: ${botGame.playerSymbol}`);
+    updateStatus(botStatusPanel, botStatusText, botStatusHint, getBotPlayerTurnStatusPayload(botGame.playerSymbol));
     setBotBoardInteractive(true);
     resetBotScores();
     showScreen(startScreen);
     saveGameState();
   }
+
+  markBootComplete();
 
   // Дожидаемся завершения первого кадра после восстановления UI
   // и только затем сообщаем платформе о готовности игры.
@@ -2046,6 +2598,9 @@ async function bootstrapGame() {
     updateOrientationState();
     updateRewardedButtonsState();
     syncPlatformGameplayState();
+    syncStickyBannerState();
+    scheduleAdaptiveLayoutSync();
+    markBootComplete();
     markGameReadyWhenPossible();
   });
 }
