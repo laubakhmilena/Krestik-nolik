@@ -424,20 +424,29 @@ body[data-booting="true"] .orientation-overlay {
   margin: 0 auto;
   place-self: center;
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: clamp(8px, 1.8vw, 12px);
 }
 
 .cell {
   width: 100%;
+  min-width: 0;
+  min-height: 0;
   aspect-ratio: 1 / 1;
+  margin: 0;
+  padding: 0;
   border: 1px solid rgba(255, 255, 255, 0.78);
   border-radius: 16px;
   background: rgba(255, 255, 255, 0.92);
   box-shadow: 0 8px 18px rgba(57, 48, 121, 0.18);
   font-size: clamp(40px, 11vw, 58px);
+  line-height: 1;
+  font-family: inherit;
   font-weight: 900;
   color: #1f1771;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
   cursor: pointer;
   transition: transform 140ms ease, box-shadow 160ms ease, background-color 160ms ease, filter 160ms ease;
 }
