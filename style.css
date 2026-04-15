@@ -80,8 +80,13 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  overflow: hidden;
+  overflow: auto;
+  scrollbar-width: none;
   isolation: isolate;
+}
+
+.screen::-webkit-scrollbar {
+  display: none;
 }
 
 .screen::before {
@@ -109,8 +114,9 @@ body {
   max-width: 430px;
   height: 100%;
   max-height: 100%;
-  text-align: center;
   min-height: 0;
+  margin-inline: auto;
+  text-align: center;
 }
 
 .start-content,
@@ -287,6 +293,7 @@ body {
   display: grid;
   grid-template-rows: auto auto auto minmax(0, 1fr) auto;
   align-content: stretch;
+  justify-items: center;
   gap: clamp(8px, 1.35vh, 11px);
 }
 
@@ -393,7 +400,7 @@ body {
 }
 
 .board {
-  width: min(100%, min(360px, 40svh));
+  width: min(100%, min(360px, 40svh, 82vw));
   max-width: min(100%, 370px);
   margin: 0 auto;
   display: grid;
@@ -464,6 +471,8 @@ body {
   display: grid;
   grid-template-columns: 1fr;
   gap: 8px;
+  width: min(100%, 430px);
+  margin-inline: auto;
 }
 
 .game-actions .btn {
@@ -579,7 +588,7 @@ body {
 .orientation-overlay {
   position: fixed;
   inset: 0;
-  z-index: 25;
+  z-index: 60;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -632,7 +641,7 @@ body {
 .modal-overlay {
   position: fixed;
   inset: 0;
-  z-index: 20;
+  z-index: 50;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -837,7 +846,7 @@ body {
   }
 
   .board {
-    width: min(100%, min(332px, 36svh));
+    width: min(100%, min(332px, 36svh, 78vw));
     gap: 7px;
   }
 
@@ -889,7 +898,7 @@ body {
   }
 
   .board {
-    width: min(100%, min(286px, 31svh));
+    width: min(100%, min(286px, 31svh, 74vw));
     gap: 6px;
   }
 
@@ -925,7 +934,7 @@ body {
   }
 
   .board {
-    width: min(100%, min(252px, 27svh));
+    width: min(100%, min(252px, 27svh, 68vw));
     gap: 5px;
   }
 
@@ -933,6 +942,36 @@ body {
     min-height: 34px;
     padding: 7px 9px;
     font-size: 13px;
+  }
+}
+
+@media (orientation: portrait) and (max-height: 420px) {
+  .screen {
+    padding: 6px;
+  }
+
+  .friend-game-content {
+    gap: 4px;
+  }
+
+  .status-panel,
+  .score-board {
+    padding: 5px;
+  }
+
+  .board {
+    width: min(100%, min(220px, 24svh, 60vw));
+    gap: 4px;
+  }
+
+  .game-actions {
+    gap: 4px;
+  }
+
+  .game-actions .btn {
+    min-height: 30px;
+    padding: 6px 8px;
+    font-size: 12px;
   }
 }
 
@@ -960,6 +999,8 @@ body {
 .bot-difficulty-content {
   display: flex;
   flex-direction: column;
+  align-items: center;
+  justify-content: center;
   gap: clamp(12px, 2.2vh, 18px);
 }
 
@@ -967,6 +1008,7 @@ body {
   display: grid;
   grid-template-columns: 1fr;
   gap: 10px;
+  width: min(100%, 360px);
 }
 
 .difficulty-btn {
