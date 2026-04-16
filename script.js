@@ -34,8 +34,6 @@ const botRestartBtn = document.getElementById("botRestartBtn");
 const botChangeDifficultyBtn = document.getElementById("botChangeDifficultyBtn");
 const botBackToMenuBtn = document.getElementById("botBackToMenuBtn");
 const botResetScoreBtn = document.getElementById("botResetScoreBtn");
-const friendRewardedRestartBtn = document.getElementById("friendRewardedRestartBtn");
-const botRewardedRestartBtn = document.getElementById("botRewardedRestartBtn");
 const orientationOverlay = document.getElementById("orientationOverlay");
 const modalOverlay = document.getElementById("modalOverlay");
 const exitConfirmModal = document.getElementById("exitConfirmModal");
@@ -61,7 +59,7 @@ const winningLines = [
   [2, 4, 6],
 ];
 
-const BOT_THINK_DELAY_MS = 450;
+const BOT_THINK_DELAY_MS = 180;
 const INTERSTITIAL_MIN_MATCHES = 2;
 const INTERSTITIAL_MIN_INTERVAL_MS = 90_000;
 const difficultyMeta = {
@@ -135,7 +133,6 @@ const translations = {
       statusCaption: "Статус партии",
       draws: "Ничьи",
       restart: "Играть снова",
-      rewardedRestart: "Реклама за быстрый реванш",
       backToMenu: "Назад в меню",
       resetScore: "Сбросить счёт",
     },
@@ -148,11 +145,6 @@ const translations = {
     orientation: {
       title: "Поверните устройство",
       text: "Игра доступна только в вертикальном режиме",
-    },
-    ads: {
-      rewardedPrefix: "▶ Реклама",
-      rewardedAriaAvailable: "Посмотреть рекламу и получить быстрый реванш",
-      rewardedAriaUnavailable: "Rewarded-реклама сейчас недоступна",
     },
     status: {
       friendTurn: "Ход: {symbol}",
@@ -223,7 +215,6 @@ const translations = {
       statusCaption: "Match Status",
       draws: "Draws",
       restart: "Play Again",
-      rewardedRestart: "Watch an ad for a quick rematch",
       backToMenu: "Back to Menu",
       resetScore: "Reset Score",
     },
@@ -236,11 +227,6 @@ const translations = {
     orientation: {
       title: "Rotate Your Device",
       text: "This game is available only in portrait mode",
-    },
-    ads: {
-      rewardedPrefix: "▶ Ad",
-      rewardedAriaAvailable: "Watch an ad and get a quick rematch",
-      rewardedAriaUnavailable: "Rewarded ads are unavailable right now",
     },
     status: {
       friendTurn: "Turn: {symbol}",
@@ -307,7 +293,6 @@ let lastSavedStateJson = "";
 let isAdPauseActive = false;
 let activeAdType = null;
 let isInterstitialPending = false;
-let isRewardedPending = false;
 let interstitialTimerId = null;
 let activeLanguage = getFallbackLanguage();
 let sdkLanguage = null;
@@ -531,12 +516,6 @@ function applyStaticTranslations() {
     element.setAttribute("aria-label", t(translationKey));
   });
 
-  [friendRewardedRestartBtn, botRewardedRestartBtn].forEach((button) => {
-    if (button) {
-      button.dataset.adPrefix = t("ads.rewardedPrefix");
-    }
-  });
-
   refreshSymbolLabels();
   updateBoardAriaLabels();
 }
@@ -654,7 +633,6 @@ function refreshLocalizedUi() {
   applyStaticTranslations();
   updateDifficultyLabel();
   refreshCurrentStatuses();
-  updateRewardedButtonsState();
   scheduleAdaptiveLayoutSync();
 }
 
@@ -758,7 +736,6 @@ function applyOrientationState() {
   }
 
   syncPlatformGameplayState();
-  updateRewardedButtonsState();
   syncStickyBannerState();
   resumeBotTurnIfNeeded();
 }
@@ -933,68 +910,14 @@ function isCurrentScreenSafeForAdBreak() {
   return activeScreenId === "startScreen" || activeScreenId === "menuScreen" || activeScreenId === "botDifficultyScreen";
 }
 
-function canUseRewardedRematch(mode) {
-  const adApi = getAdvertisementApi();
-  const isFriendMode = mode === "friend";
-  const targetScreenId = isFriendMode ? "friendGameScreen" : "botGameScreen";
-  const isMatchFinished = isFriendMode ? friendGame.isFinished : botGame.isFinished;
-
-  return (
-    getActiveScreenId() === targetScreenId &&
-    isMatchFinished &&
-    !document.hidden &&
-    !isModalOpen &&
-    !isLandscapeLocked &&
-    !isInterstitialPending &&
-    !isRewardedPending &&
-    !isAdPauseActive &&
-    Boolean(adApi?.showRewardedVideo)
-  );
-}
-
-function setRewardedButtonsBusy(isBusy) {
-  [friendRewardedRestartBtn, botRewardedRestartBtn].forEach((button) => {
-    if (!button) {
-      return;
-    }
-
-    button.disabled = isBusy || !button.dataset.adEnabled || button.dataset.adEnabled === "false";
-    button.closest(".game-actions")?.classList.toggle("ad-loading", isBusy);
-  });
-}
-
-function updateRewardedButtonsState() {
-  const adApi = getAdvertisementApi();
-  const hasRewardedMethod = Boolean(adApi?.showRewardedVideo);
-  const buttonStateById = {
-    friendRewardedRestartBtn: canUseRewardedRematch("friend"),
-    botRewardedRestartBtn: canUseRewardedRematch("bot"),
-  };
-
-  [friendRewardedRestartBtn, botRewardedRestartBtn].forEach((button) => {
-    if (!button) {
-      return;
-    }
-
-    button.dataset.adEnabled = String(hasRewardedMethod);
-    button.dataset.adPrefix = t("ads.rewardedPrefix");
-    button.disabled = !buttonStateById[button.id];
-    button.hidden = !hasRewardedMethod;
-    button.setAttribute(
-      "aria-label",
-      hasRewardedMethod ? t("ads.rewardedAriaAvailable") : t("ads.rewardedAriaUnavailable")
-    );
-  });
-}
-
-function canShowInterstitialNow() {
+function canShowInterstitialNow({ requireMatchCount = true, requireInterval = true, allowGameplayTransition = false } = {}) {
   if (
     isInterstitialPending ||
-    isRewardedPending ||
     isAdPauseActive ||
+    document.hidden ||
     isModalOpen ||
     isLandscapeLocked ||
-    !isCurrentScreenSafeForAdBreak()
+    (!allowGameplayTransition && !isCurrentScreenSafeForAdBreak())
   ) {
     return false;
   }
@@ -1004,8 +927,9 @@ function canShowInterstitialNow() {
     return false;
   }
 
-  const enoughMatches = monetizationState.finishedMatchesSinceLastInterstitial >= INTERSTITIAL_MIN_MATCHES;
-  const enoughTimePassed = Date.now() - monetizationState.lastInterstitialAt >= INTERSTITIAL_MIN_INTERVAL_MS;
+  const enoughMatches =
+    !requireMatchCount || monetizationState.finishedMatchesSinceLastInterstitial >= INTERSTITIAL_MIN_MATCHES;
+  const enoughTimePassed = !requireInterval || Date.now() - monetizationState.lastInterstitialAt >= INTERSTITIAL_MIN_INTERVAL_MS;
   return enoughMatches && enoughTimePassed;
 }
 
@@ -1019,7 +943,6 @@ function pauseGameForAd(adType) {
   stopBotTurnTimer();
   setBotBoardInteractive(false);
   lockBoard(board);
-  updateRewardedButtonsState();
   syncPlatformGameplayState();
   syncStickyBannerState();
   saveGameState();
@@ -1045,20 +968,20 @@ function resumeGameAfterAd() {
     resumeBotTurnIfNeeded();
   }
 
-  updateRewardedButtonsState();
   syncPlatformGameplayState();
   syncStickyBannerState();
   scheduleAdaptiveLayoutSync();
   saveGameState();
 }
 
-function showInterstitialAd(reason = "match-end") {
-  if (!canShowInterstitialNow()) {
+function showInterstitialAd(reason = "match-end", options = {}) {
+  if (!canShowInterstitialNow(options)) {
     return Promise.resolve(false);
   }
 
   const adApi = getAdvertisementApi();
   isInterstitialPending = true;
+  pauseGameForAd(`interstitial:${reason}`);
 
   return new Promise((resolve) => {
     let resumed = false;
@@ -1102,67 +1025,16 @@ function showInterstitialAd(reason = "match-end") {
   });
 }
 
-function showRewardedAd(onReward) {
-  if (isRewardedPending || isInterstitialPending || isAdPauseActive || isModalOpen || isLandscapeLocked) {
-    return Promise.resolve(false);
-  }
-
-  const adApi = getAdvertisementApi();
-  if (!adApi?.showRewardedVideo) {
-    updateRewardedButtonsState();
-    return Promise.resolve(false);
-  }
-
-  isRewardedPending = true;
-  setRewardedButtonsBusy(true);
-
-  return new Promise((resolve) => {
-    let isRewardGranted = false;
-    let isCompleted = false;
-
-    const complete = (result) => {
-      if (isCompleted) {
-        return;
-      }
-
-      isCompleted = true;
-      isRewardedPending = false;
-      setRewardedButtonsBusy(false);
-      updateRewardedButtonsState();
-      resumeGameAfterAd();
-      resolve(result);
-    };
-
-    try {
-      adApi.showRewardedVideo({
-        callbacks: {
-          onOpen: () => {
-            pauseGameForAd("rewarded:quick-rematch");
-          },
-          onRewarded: () => {
-            isRewardGranted = true;
-          },
-          onClose: () => {
-            if (isRewardGranted) {
-              try {
-                onReward?.();
-              } catch (error) {
-                console.warn("Ошибка применения rewarded-награды.", error);
-              }
-            }
-            complete(isRewardGranted);
-          },
-          onError: (error) => {
-            console.warn("Не удалось показать rewarded-видео.", error);
-            complete(false);
-          },
-        },
-      });
-    } catch (error) {
-      console.warn("Ошибка запуска rewarded-видео.", error);
-      complete(false);
-    }
+function showUserActionInterstitial(reason) {
+  return showInterstitialAd(reason, {
+    requireMatchCount: false,
+    allowGameplayTransition: true,
   });
+}
+
+async function runAfterUserActionInterstitial(reason, action) {
+  await showUserActionInterstitial(reason);
+  action?.();
 }
 
 function recordFinishedMatchAndMaybeShowAd() {
@@ -1186,7 +1058,7 @@ function recordFinishedMatchAndMaybeShowAd() {
     }
 
     showInterstitialAd("after-match");
-  }, 240);
+  }, 80);
 }
 
 function isGameScreenActive() {
@@ -1312,7 +1184,6 @@ function markGameReadyWhenPossible() {
 
 function handlePageVisibilityChange() {
   syncPlatformGameplayState();
-  updateRewardedButtonsState();
   scheduleAdaptiveLayoutSync();
 
   if (!document.hidden) {
@@ -1379,7 +1250,7 @@ function bindAction(button, handler) {
     const releaseClickLock = () => {
       window.setTimeout(() => {
         clickLockMap.delete(button);
-      }, 120);
+      }, 80);
     };
 
     try {
@@ -1424,13 +1295,12 @@ function showScreen(screenToShow) {
 
   isShowingScreen = false;
   scheduleAdaptiveLayoutSync();
-  updateRewardedButtonsState();
   syncPlatformGameplayState();
   syncStickyBannerState();
   resumeBotTurnIfNeeded();
 }
 
-function closeExitConfirmModal({ keepPendingTarget = false } = {}) {
+function closeExitConfirmModal({ keepPendingTarget = false, resumeGameplay = true } = {}) {
   if (!keepPendingTarget) {
     pendingExitTarget = null;
   }
@@ -1445,9 +1315,11 @@ function closeExitConfirmModal({ keepPendingTarget = false } = {}) {
   isModalOpen = false;
   syncUiInteractivity();
   scheduleAdaptiveLayoutSync();
-  updateRewardedButtonsState();
-  syncPlatformGameplayState();
-  resumeBotTurnIfNeeded();
+
+  if (resumeGameplay) {
+    syncPlatformGameplayState();
+    resumeBotTurnIfNeeded();
+  }
 }
 
 function openExitConfirmModal(targetScreen) {
@@ -1472,7 +1344,6 @@ function openExitConfirmModal(targetScreen) {
   stopBotTurnTimer();
   botGame.shouldResumeBotMove = botGame.turn === "bot" && !botGame.isFinished;
   scheduleAdaptiveLayoutSync();
-  updateRewardedButtonsState();
   syncPlatformGameplayState();
   saveGameState();
 }
@@ -2019,7 +1890,6 @@ function restoreGameState(state) {
   refreshCurrentStatuses();
 
   isRestoringState = false;
-  updateRewardedButtonsState();
   resumeBotTurnIfNeeded();
   saveGameState();
 }
@@ -2052,7 +1922,6 @@ function resetFriendBoard() {
 
   restartBtn?.classList.remove("game-over");
   scheduleAdaptiveLayoutSync();
-  updateRewardedButtonsState();
   syncPlatformGameplayState();
   saveGameState();
 }
@@ -2085,7 +1954,6 @@ function finishFriendGame({ winnerSymbol = null, isDraw = false, line = null } =
 
   restartBtn?.classList.add("game-over");
   scheduleAdaptiveLayoutSync();
-  updateRewardedButtonsState();
   syncPlatformGameplayState();
   saveGameState();
   recordFinishedMatchAndMaybeShowAd();
@@ -2352,7 +2220,6 @@ function finishBotGame({ winner = null, isDraw = false, line = null } = {}) {
 
   botRestartBtn?.classList.add("game-over");
   scheduleAdaptiveLayoutSync();
-  updateRewardedButtonsState();
   syncPlatformGameplayState();
   saveGameState();
   recordFinishedMatchAndMaybeShowAd();
@@ -2479,7 +2346,6 @@ function resetBotBoard({ keepStarter = false } = {}) {
   botRestartBtn?.classList.remove("game-over");
   updateDifficultyLabel();
   scheduleAdaptiveLayoutSync();
-  updateRewardedButtonsState();
   syncPlatformGameplayState();
 
   if (botGame.turn === "player") {
@@ -2566,34 +2432,17 @@ function openBotGameWithDifficulty(level) {
   saveGameState();
 }
 
-function handleRewardedQuickRematch(mode) {
-  const isFriendMode = mode === "friend";
-  if (!canUseRewardedRematch(mode)) {
-    return Promise.resolve(false);
-  }
-
-  const applyReward = () => {
-    if (isFriendMode) {
-      resetFriendBoard();
-      return;
-    }
-
-    resetBotBoard({ keepStarter: false });
-  };
-
-  return showRewardedAd(applyReward);
-}
-
 bindAction(themeToggleBtn, (event) => {
   event.stopPropagation();
   setThemeMenuOpen(!isThemeMenuOpen());
 });
 
 themeOptionButtons.forEach((button) => {
-  bindAction(button, () => {
+  bindAction(button, async () => {
     applyTheme(button.dataset.themeOption, { shouldSave: true });
     setThemeMenuOpen(false);
     themeToggleBtn?.focus({ preventScroll: true });
+    await showUserActionInterstitial("theme-select");
   });
 });
 
@@ -2647,8 +2496,10 @@ bindAction(mediumLevelBtn, () => openBotGameWithDifficulty("medium"));
 bindAction(hardLevelBtn, () => openBotGameWithDifficulty("hard"));
 
 bindAction(botDifficultyBackBtn, () => {
-  showScreen(menuScreen);
-  saveGameState();
+  return runAfterUserActionInterstitial("mode-selection", () => {
+    showScreen(menuScreen);
+    saveGameState();
+  });
 });
 
 bindAction(backToMenuBtn, () => {
@@ -2657,7 +2508,7 @@ bindAction(backToMenuBtn, () => {
     return;
   }
 
-  leaveGameTo(menuScreen);
+  return runAfterUserActionInterstitial("to-menu", () => leaveGameTo(menuScreen));
 });
 
 bindAction(botBackToMenuBtn, () => {
@@ -2666,7 +2517,7 @@ bindAction(botBackToMenuBtn, () => {
     return;
   }
 
-  leaveGameTo(menuScreen);
+  return runAfterUserActionInterstitial("to-menu", () => leaveGameTo(menuScreen));
 });
 
 bindAction(botChangeDifficultyBtn, () => {
@@ -2675,28 +2526,30 @@ bindAction(botChangeDifficultyBtn, () => {
     return;
   }
 
-  leaveGameTo(botDifficultyScreen);
+  return runAfterUserActionInterstitial("change-difficulty", () => leaveGameTo(botDifficultyScreen));
 });
 
 bindAction(restartBtn, resetFriendBoard);
 bindAction(botRestartBtn, () => resetBotBoard({ keepStarter: false }));
 bindAction(resetScoreBtn, resetFriendScores);
 bindAction(botResetScoreBtn, resetBotScores);
-bindAction(friendRewardedRestartBtn, () => handleRewardedQuickRematch("friend"));
-bindAction(botRewardedRestartBtn, () => handleRewardedQuickRematch("bot"));
 
 board?.addEventListener("click", handleFriendCellClick);
 botBoard?.addEventListener("click", handleBotCellClick);
 
 bindAction(cancelExitBtn, () => closeExitConfirmModal({ keepPendingTarget: false }));
 
-bindAction(confirmExitBtn, () => {
+bindAction(confirmExitBtn, async () => {
   if (isLandscapeLocked) {
     closeExitConfirmModal({ keepPendingTarget: false });
     return;
   }
 
-  leaveGameTo(pendingExitTarget ?? menuScreen);
+  const targetScreen = pendingExitTarget ?? menuScreen;
+  const reason = targetScreen === botDifficultyScreen ? "change-difficulty" : "to-menu";
+  closeExitConfirmModal({ keepPendingTarget: false, resumeGameplay: false });
+  await showUserActionInterstitial(reason);
+  leaveGameTo(targetScreen);
   saveGameState();
 });
 
@@ -2746,11 +2599,9 @@ async function bootstrapGame() {
   applyLanguage(activeLanguage);
   updateOrientationState();
   closeExitConfirmModal();
-  updateRewardedButtonsState();
   scheduleAdaptiveLayoutSync();
 
   initYandexGamesSdk().finally(() => {
-    updateRewardedButtonsState();
     syncPlatformGameplayState();
     syncStickyBannerState();
     scheduleAdaptiveLayoutSync();
@@ -2779,7 +2630,6 @@ async function bootstrapGame() {
   // и только затем сообщаем платформе о готовности игры.
   window.requestAnimationFrame(() => {
     updateOrientationState();
-    updateRewardedButtonsState();
     syncPlatformGameplayState();
     syncStickyBannerState();
     scheduleAdaptiveLayoutSync();
