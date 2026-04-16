@@ -691,7 +691,7 @@ function disablePageScrollGestures() {
       return false;
     }
 
-    const scrollContainer = eventTarget.closest(".confirm-modal, .orientation-card");
+    const scrollContainer = eventTarget.closest(".confirm-modal");
     if (!scrollContainer) {
       return false;
     }
@@ -714,15 +714,8 @@ function disablePageScrollGestures() {
   document.addEventListener("contextmenu", (event) => event.preventDefault());
 }
 
-function isPortraitOrientation() {
-  const byMedia = window.matchMedia?.("(orientation: portrait)").matches;
-  const byViewport = window.innerHeight >= window.innerWidth;
-  return byMedia ?? byViewport;
-}
-
 let orientationFrameId = null;
 let isLandscapeLocked = false;
-let wasPortraitOnLastApply = null;
 
 function setApplicationInteractivity(isInteractive) {
   if (!appShell) {
@@ -741,37 +734,15 @@ function syncUiInteractivity() {
 }
 
 function applyOrientationState() {
-  const portrait = isPortraitOrientation();
-  const orientationChanged = wasPortraitOnLastApply !== portrait;
-  wasPortraitOnLastApply = portrait;
-
   if (orientationOverlay) {
-    orientationOverlay.classList.toggle("hidden", portrait);
-    orientationOverlay.setAttribute("aria-hidden", portrait ? "true" : "false");
+    orientationOverlay.classList.add("hidden");
+    orientationOverlay.setAttribute("aria-hidden", "true");
   }
 
-  document.body.classList.toggle("landscape-locked", !portrait);
-
-  if (!portrait) {
-    if (!isLandscapeLocked || orientationChanged) {
-      isLandscapeLocked = true;
-      closeExitConfirmModal({ keepPendingTarget: false });
-      if (document.activeElement instanceof HTMLElement) {
-        document.activeElement.blur();
-      }
-      orientationOverlay?.focus({ preventScroll: true });
-    }
-    syncUiInteractivity();
-    scheduleAdaptiveLayoutSync();
-    syncPlatformGameplayState();
-    updateRewardedButtonsState();
-    syncStickyBannerState();
-    return;
-  }
+  document.body.classList.remove("landscape-locked");
 
   if (isLandscapeLocked) {
     isLandscapeLocked = false;
-    closeExitConfirmModal({ keepPendingTarget: false });
     focusScreenPrimaryAction(
       [startScreen, menuScreen, botDifficultyScreen, friendGameScreen, botGameScreen].find(
         (screen) => screen && !screen.classList.contains("hidden")
@@ -1241,7 +1212,6 @@ function shouldGameplayBeActive() {
   return (
     isGameScreenActive() &&
     isGameplayMatchActive() &&
-    isPortraitOrientation() &&
     !document.hidden &&
     !isAdPauseActive &&
     !isModalOpen &&
@@ -1446,9 +1416,7 @@ function showScreen(screenToShow) {
 
   closeExitConfirmModal({ keepPendingTarget: false });
 
-  if (isPortraitOrientation()) {
-    focusScreenPrimaryAction(screenToShow);
-  }
+  focusScreenPrimaryAction(screenToShow);
 
   if (!isRestoringState && !isSameScreen) {
     saveGameState();
@@ -1483,7 +1451,7 @@ function closeExitConfirmModal({ keepPendingTarget = false } = {}) {
 }
 
 function openExitConfirmModal(targetScreen) {
-  if (!targetScreen || !isPortraitOrientation() || isLandscapeLocked) {
+  if (!targetScreen || isLandscapeLocked) {
     return;
   }
 
@@ -1626,7 +1594,28 @@ function syncBoardSize(contentEl, boardEl) {
   }
 
   const contentChildren = [...contentEl.children].filter((child) => child instanceof HTMLElement);
-  const rowGap = Number.parseFloat(window.getComputedStyle(contentEl).rowGap) || 0;
+  const contentStyles = window.getComputedStyle(contentEl);
+  const gridColumns = contentStyles.gridTemplateColumns
+    .split(" ")
+    .map((column) => Number.parseFloat(column))
+    .filter((column) => Number.isFinite(column) && column > 0);
+  const isLandscapeGameLayout = window.matchMedia?.("(orientation: landscape)").matches && gridColumns.length > 1;
+
+  if (isLandscapeGameLayout) {
+    const maxWidth = Math.max(0, Math.floor(Math.min(gridColumns[0], 370)));
+    const maxHeight = Math.max(0, Math.floor(contentEl.clientHeight));
+    const nextBoardSize = Math.max(0, Math.min(maxWidth, maxHeight));
+
+    if (nextBoardSize > 0) {
+      boardEl.style.setProperty("--board-size", `${nextBoardSize}px`);
+      return;
+    }
+
+    boardEl.style.removeProperty("--board-size");
+    return;
+  }
+
+  const rowGap = Number.parseFloat(contentStyles.rowGap) || 0;
   const otherBlocksHeight = contentChildren
     .filter((child) => child !== boardEl)
     .reduce((sum, child) => sum + child.getBoundingClientRect().height, 0);
@@ -2153,7 +2142,6 @@ function stopBotTurnTimer() {
 function canBotActNow() {
   return (
     !document.hidden &&
-    isPortraitOrientation() &&
     !isModalOpen &&
     !isAdPauseActive &&
     getActiveScreenId() === "botGameScreen" &&

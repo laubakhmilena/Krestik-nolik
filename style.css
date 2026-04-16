@@ -979,56 +979,6 @@ body[data-booting="true"] .orientation-overlay {
   opacity: 0.17;
 }
 
-.orientation-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 60;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding:
-    max(16px, var(--safe-top))
-    max(16px, var(--safe-right))
-    max(16px, var(--safe-bottom))
-    max(16px, var(--safe-left));
-  background: rgba(18, 10, 50, 0.88);
-  touch-action: none;
-}
-
-.orientation-card {
-  width: min(360px, 100%);
-  max-height: 100%;
-  overflow: auto;
-  border-radius: 20px;
-  border: 1px solid rgba(255, 255, 255, 0.26);
-  background: rgba(255, 255, 255, 0.12);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  padding: 18px 16px;
-  text-align: center;
-  color: #fff;
-  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.24);
-}
-
-.orientation-icon {
-  display: inline-block;
-  font-size: 48px;
-  margin-bottom: 8px;
-}
-
-.orientation-title {
-  margin: 0;
-  font-size: 24px;
-  font-weight: 800;
-}
-
-.orientation-text {
-  margin: 8px 0 0;
-  font-size: 16px;
-  line-height: 1.35;
-  color: rgba(255, 255, 255, 0.92);
-}
-
 .hidden {
   display: none !important;
 }
@@ -1395,14 +1345,292 @@ body[data-booting="true"] .orientation-overlay {
   }
 }
 
-@media (orientation: landscape) {
+@media (orientation: landscape) and (max-height: 560px) {
   .app-shell {
-    visibility: hidden;
-    pointer-events: none;
+    padding:
+      max(6px, var(--safe-top))
+      max(6px, var(--safe-right))
+      max(6px, var(--safe-bottom))
+      max(6px, var(--safe-left));
   }
 
-  .orientation-overlay {
-    display: flex;
+  .screen {
+    max-width: min(100%, 980px);
+    padding: clamp(8px, 2.2vmin, 14px);
+    border-radius: 18px;
+  }
+
+  .content {
+    max-width: none;
+  }
+
+  .shape {
+    opacity: 0.08;
+  }
+
+  .theme-picker {
+    top: max(8px, var(--safe-top));
+    right: max(8px, var(--safe-right));
+  }
+
+  .theme-toggle {
+    min-height: 32px;
+    padding: 7px 10px;
+    font-size: 12px;
+  }
+
+  .theme-menu {
+    width: min(250px, calc(100vw - 28px));
+    max-height: min(260px, calc(100dvh - 54px));
+  }
+
+  .start-content,
+  .menu-content,
+  .bot-difficulty-content {
+    width: min(100%, 760px);
+    min-height: 100%;
+    gap: clamp(8px, 2.4vmin, 14px);
+  }
+
+  .start-content {
+    padding-inline: clamp(56px, 12vw, 110px);
+  }
+
+  .eyebrow {
+    font-size: clamp(10px, 1.7vmin, 12px);
+  }
+
+  .title {
+    font-size: clamp(26px, 6.4vmin, 40px);
+    line-height: 1.04;
+  }
+
+  .subtitle {
+    max-width: 620px;
+    font-size: clamp(13px, 2.9vmin, 16px);
+    line-height: 1.32;
+  }
+
+  .cta-btn {
+    min-width: min(100%, 360px);
+    padding: 12px 18px;
+    font-size: clamp(17px, 3.8vmin, 22px);
+  }
+
+  .menu-title {
+    max-width: 720px;
+    font-size: clamp(24px, 5.6vmin, 34px);
+  }
+
+  .mode-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: clamp(10px, 2.2vmin, 14px);
+    margin-block: 0;
+  }
+
+  .mode-card {
+    min-height: clamp(104px, 28vmin, 128px);
+    padding: clamp(13px, 3vmin, 18px);
+  }
+
+  .mode-card-title {
+    font-size: clamp(18px, 4vmin, 24px);
+  }
+
+  .mode-card-text {
+    font-size: clamp(12px, 2.8vmin, 15px);
+    line-height: 1.25;
+  }
+
+  .back-btn {
+    min-height: 40px;
+    padding: 9px 24px;
+    font-size: clamp(14px, 3vmin, 17px);
+  }
+
+  .difficulty-grid {
+    width: min(100%, 660px);
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: clamp(8px, 2vmin, 12px);
+  }
+
+  .difficulty-btn {
+    min-height: 52px;
+    padding: 10px 12px;
+    font-size: clamp(16px, 3.7vmin, 22px);
+  }
+
+  .friend-game-content {
+    max-width: none;
+    grid-template-columns: minmax(0, 1fr) minmax(220px, 300px);
+    grid-template-rows: auto auto auto minmax(0, 1fr);
+    align-items: stretch;
+    align-content: center;
+    column-gap: clamp(10px, 2.4vmin, 16px);
+    row-gap: clamp(6px, 1.7vmin, 10px);
+  }
+
+  #friendGameScreen .friend-game-content,
+  #botGameScreen .friend-game-content {
+    padding-block: 0;
+  }
+
+  #botGameScreen .friend-game-content {
+    grid-template-rows: auto auto auto auto minmax(0, 1fr);
+  }
+
+  .board {
+    grid-column: 1;
+    grid-row: 1 / -1;
+    align-self: center;
+    justify-self: center;
+    gap: clamp(5px, 1.8vmin, 9px);
+  }
+
+  .game-title,
+  .difficulty-label,
+  .status-panel,
+  .score-board,
+  .game-actions {
+    grid-column: 2;
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .game-title {
+    font-size: clamp(18px, 4.3vmin, 26px);
+    line-height: 1.08;
+  }
+
+  .difficulty-label {
+    margin-top: 0;
+    padding: 5px 9px;
+    font-size: clamp(10px, 2.2vmin, 12px);
+    line-height: 1.15;
+  }
+
+  .status-panel {
+    padding: clamp(6px, 1.8vmin, 9px) 10px;
+    border-radius: 14px;
+  }
+
+  .status-caption {
+    font-size: clamp(9px, 2vmin, 11px);
+  }
+
+  .game-status {
+    margin-top: 2px;
+    font-size: clamp(16px, 3.7vmin, 22px);
+  }
+
+  .status-hint {
+    font-size: clamp(11px, 2.4vmin, 13px);
+    line-height: 1.2;
+  }
+
+  .score-board {
+    padding: 5px;
+    gap: 5px;
+    border-radius: 14px;
+  }
+
+  .score-item {
+    padding: 5px 3px;
+    border-radius: 10px;
+  }
+
+  .score-label {
+    font-size: clamp(10px, 2.2vmin, 12px);
+    line-height: 1.1;
+  }
+
+  .score-value {
+    font-size: clamp(18px, 4vmin, 24px);
+  }
+
+  .cell {
+    border-radius: clamp(10px, 2.5vmin, 14px);
+    font-size: clamp(32px, 12vmin, 52px);
+  }
+
+  .game-actions {
+    align-self: end;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px;
+    margin-top: 0;
+  }
+
+  .game-actions .restart-btn,
+  .game-actions .rewarded-btn {
+    grid-column: 1 / -1;
+  }
+
+  .game-actions .btn {
+    min-height: clamp(36px, 9vmin, 44px);
+    padding: 8px 9px;
+    font-size: clamp(11px, 2.7vmin, 14px);
+    border-radius: 11px;
+  }
+
+  .confirm-modal {
+    width: min(340px, calc(100vw - 24px));
+    max-height: calc(100dvh - 24px);
+  }
+}
+
+@media (orientation: landscape) and (max-height: 360px) {
+  .screen {
+    padding: 7px;
+    border-radius: 16px;
+  }
+
+  .start-content,
+  .menu-content,
+  .bot-difficulty-content {
+    gap: 7px;
+  }
+
+  .start-content {
+    padding-inline: clamp(48px, 10vw, 86px);
+  }
+
+  .subtitle {
+    max-width: 560px;
+  }
+
+  .mode-card {
+    min-height: 92px;
+    padding: 11px;
+    gap: 5px;
+  }
+
+  .mode-card-badge {
+    padding: 3px 8px;
+    font-size: 10px;
+  }
+
+  .friend-game-content {
+    grid-template-columns: minmax(0, 1fr) minmax(208px, 280px);
+    column-gap: 8px;
+    row-gap: 5px;
+  }
+
+  .status-panel {
+    padding: 5px 8px;
+  }
+
+  .score-board {
+    padding: 4px;
+    gap: 4px;
+  }
+
+  .game-actions {
+    gap: 5px;
+  }
+
+  .game-actions .btn {
+    min-height: 34px;
+    padding: 7px 8px;
   }
 }
 
@@ -1503,17 +1731,7 @@ body[data-booting="true"] .orientation-overlay {
   touch-action: manipulation;
 }
 
-.orientation-overlay.hidden,
 .modal-overlay.hidden {
-  pointer-events: none;
-}
-
-body.landscape-locked .modal-overlay {
-  display: none !important;
-}
-
-body.landscape-locked .app-shell {
-  visibility: hidden;
   pointer-events: none;
 }
 
@@ -1527,5 +1745,59 @@ body.landscape-locked .app-shell {
   .back-btn,
   .game-actions .btn {
     min-height: 44px;
+  }
+}
+
+@media (orientation: landscape) and (max-height: 560px) {
+  .difficulty-grid {
+    width: min(100%, 660px);
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: clamp(8px, 2vmin, 12px);
+  }
+
+  .difficulty-btn {
+    min-height: 52px;
+    padding: 10px 12px;
+    font-size: clamp(16px, 3.7vmin, 22px);
+  }
+
+  .difficulty-label {
+    margin-top: 0;
+    padding: 5px 9px;
+    font-size: clamp(10px, 2.2vmin, 12px);
+    line-height: 1.15;
+  }
+}
+
+@media (orientation: landscape) and (max-height: 360px) {
+  .difficulty-btn {
+    min-height: 46px;
+    padding: 8px 10px;
+  }
+
+  .game-title {
+    font-size: clamp(17px, 4vmin, 22px);
+  }
+
+  .status-caption {
+    font-size: 9px;
+  }
+
+  .game-status {
+    font-size: clamp(15px, 3.4vmin, 20px);
+  }
+
+  .status-hint {
+    font-size: clamp(10px, 2.2vmin, 12px);
+  }
+
+  .score-value {
+    font-size: clamp(16px, 3.6vmin, 22px);
+  }
+
+  .game-actions .btn {
+    min-height: 30px;
+    padding: 6px 7px;
+    font-size: clamp(10px, 2.4vmin, 12px);
   }
 }
