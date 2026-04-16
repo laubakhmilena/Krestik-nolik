@@ -41,7 +41,12 @@ const modalOverlay = document.getElementById("modalOverlay");
 const exitConfirmModal = document.getElementById("exitConfirmModal");
 const confirmExitBtn = document.getElementById("confirmExitBtn");
 const cancelExitBtn = document.getElementById("cancelExitBtn");
+const themePicker = document.getElementById("themePicker");
+const themeToggleBtn = document.getElementById("themeToggleBtn");
+const themeMenu = document.getElementById("themeMenu");
+const themeOptionButtons = document.querySelectorAll("[data-theme-option]");
 const STORAGE_KEY = "ticTacToeState";
+const THEME_STORAGE_KEY = "ticTacToeTheme";
 const STORAGE_VERSION = 2;
 const YANDEX_SDK_URL = "https://yandex.ru/games/sdk/v2";
 
@@ -63,6 +68,16 @@ const difficultyMeta = {
   easy: { translationKey: "difficulty.easy" },
   medium: { translationKey: "difficulty.medium" },
   hard: { translationKey: "difficulty.hard" },
+};
+const DEFAULT_THEME = "sun-moon";
+const availableThemes = new Set(["cloud-star", "cat-yarn", "coffee-donut", DEFAULT_THEME, "fire-water", "classic-xo"]);
+const themeColorByTheme = {
+  "cloud-star": "#dff5ff",
+  "cat-yarn": "#ffd8c7",
+  "coffee-donut": "#f8dfbd",
+  "sun-moon": "#4555bd",
+  "fire-water": "#153e75",
+  "classic-xo": "#f4f7fb",
 };
 
 const translations = {
@@ -342,6 +357,90 @@ function setTextIfPresent(element, value) {
   if (element) {
     element.textContent = value;
   }
+}
+
+function getSafeTheme(theme) {
+  return availableThemes.has(theme) ? theme : DEFAULT_THEME;
+}
+
+function loadSavedTheme() {
+  try {
+    return getSafeTheme(localStorage.getItem(THEME_STORAGE_KEY));
+  } catch (error) {
+    console.warn("РќРµ СѓРґР°Р»РѕСЃСЊ РїСЂРѕС‡РёС‚Р°С‚СЊ С‚РµРјСѓ", error);
+    return DEFAULT_THEME;
+  }
+}
+
+function saveTheme(theme) {
+  try {
+    localStorage.setItem(THEME_STORAGE_KEY, getSafeTheme(theme));
+    return true;
+  } catch (error) {
+    console.warn("РќРµ СѓРґР°Р»РѕСЃСЊ СЃРѕС…СЂР°РЅРёС‚СЊ С‚РµРјСѓ", error);
+    return false;
+  }
+}
+
+function updateThemeMetaColor(theme) {
+  const themeColorMeta = document.querySelector('meta[name="theme-color"]');
+
+  if (themeColorMeta) {
+    themeColorMeta.setAttribute("content", themeColorByTheme[theme] ?? themeColorByTheme[DEFAULT_THEME]);
+  }
+}
+
+function updateThemeOptions(theme) {
+  const activeTheme = getSafeTheme(theme);
+
+  themeOptionButtons.forEach((button) => {
+    const isActive = button.dataset.themeOption === activeTheme;
+    button.classList.toggle("is-active", isActive);
+    button.setAttribute("aria-checked", isActive ? "true" : "false");
+  });
+}
+
+function applyTheme(theme, { shouldSave = false } = {}) {
+  const activeTheme = getSafeTheme(theme);
+
+  document.body.dataset.theme = activeTheme;
+  updateThemeOptions(activeTheme);
+  updateThemeMetaColor(activeTheme);
+
+  if (shouldSave) {
+    saveTheme(activeTheme);
+  }
+}
+
+function setThemeMenuOpen(isOpen) {
+  if (!themeMenu || !themeToggleBtn) {
+    return;
+  }
+
+  themeMenu.classList.toggle("hidden", !isOpen);
+  themeToggleBtn.setAttribute("aria-expanded", isOpen ? "true" : "false");
+
+  if (isOpen) {
+    const activeOption = themeMenu.querySelector(".theme-option.is-active");
+    if (activeOption instanceof HTMLElement) {
+      activeOption.focus({ preventScroll: true });
+    }
+  }
+}
+
+function isThemeMenuOpen() {
+  return Boolean(themeMenu && !themeMenu.classList.contains("hidden"));
+}
+
+function setCellValue(cell, value) {
+  if (!(cell instanceof HTMLElement)) {
+    return;
+  }
+
+  const symbol = value === "X" || value === "O" ? value : "";
+  cell.textContent = symbol;
+  cell.classList.toggle("cell-x", symbol === "X");
+  cell.classList.toggle("cell-o", symbol === "O");
 }
 
 function updateBoardAriaLabels() {
@@ -1739,7 +1838,7 @@ function restoreFriendBoardUI() {
     const index = Number(cell.dataset.index);
     const value = friendGame.state[index] ?? "";
 
-    cell.textContent = value;
+    setCellValue(cell, value);
     cell.classList.remove("winner-cell");
     cell.disabled = friendGame.isFinished ? true : Boolean(value);
   });
@@ -1760,7 +1859,7 @@ function restoreBotBoardUI() {
     const index = Number(cell.dataset.index);
     const value = botGame.state[index] ?? "";
 
-    cell.textContent = value;
+    setCellValue(cell, value);
     cell.classList.remove("winner-cell");
     cell.disabled = true;
   });
@@ -1891,7 +1990,7 @@ function resetFriendBoard() {
 
   if (board) {
     board.querySelectorAll(".cell").forEach((cell) => {
-      cell.textContent = "";
+      setCellValue(cell, "");
       cell.disabled = false;
       cell.classList.remove("winner-cell");
     });
@@ -1958,7 +2057,7 @@ function handleFriendCellClick(event) {
   }
 
   friendGame.state[index] = friendGame.currentPlayer;
-  target.textContent = friendGame.currentPlayer;
+  setCellValue(target, friendGame.currentPlayer);
   target.disabled = true;
   saveGameState();
 
@@ -2271,7 +2370,7 @@ function applyBotMove() {
 
     const cell = botBoard?.querySelector(`.cell[data-index="${move}"]`);
     if (cell) {
-      cell.textContent = botGame.botSymbol;
+      setCellValue(cell, botGame.botSymbol);
       cell.disabled = true;
     }
 
@@ -2320,7 +2419,7 @@ function resetBotBoard({ keepStarter = false } = {}) {
 
   if (botBoard) {
     botBoard.querySelectorAll(".cell").forEach((cell) => {
-      cell.textContent = "";
+      setCellValue(cell, "");
       cell.disabled = false;
       cell.classList.remove("winner-cell");
     });
@@ -2376,7 +2475,7 @@ function handleBotCellClick(event) {
   }
 
   botGame.state[index] = botGame.playerSymbol;
-  target.textContent = botGame.playerSymbol;
+  setCellValue(target, botGame.playerSymbol);
   target.disabled = true;
 
   const winner = getWinnerForState(botGame.state);
@@ -2437,6 +2536,42 @@ function handleRewardedQuickRematch(mode) {
 
   return showRewardedAd(applyReward);
 }
+
+bindAction(themeToggleBtn, (event) => {
+  event.stopPropagation();
+  setThemeMenuOpen(!isThemeMenuOpen());
+});
+
+themeOptionButtons.forEach((button) => {
+  bindAction(button, () => {
+    applyTheme(button.dataset.themeOption, { shouldSave: true });
+    setThemeMenuOpen(false);
+    themeToggleBtn?.focus({ preventScroll: true });
+  });
+});
+
+themeMenu?.addEventListener("click", (event) => {
+  event.stopPropagation();
+});
+
+document.addEventListener("click", (event) => {
+  const clickedInsideThemePicker = event.target instanceof Node && themePicker?.contains(event.target);
+
+  if (!isThemeMenuOpen() || clickedInsideThemePicker) {
+    return;
+  }
+
+  setThemeMenuOpen(false);
+});
+
+document.addEventListener("keydown", (event) => {
+  if (event.key !== "Escape" || !isThemeMenuOpen()) {
+    return;
+  }
+
+  setThemeMenuOpen(false);
+  themeToggleBtn?.focus({ preventScroll: true });
+});
 
 bindAction(startBtn, () => {
   showScreen(menuScreen);
@@ -2559,6 +2694,7 @@ window.addEventListener("pagehide", () => {
 });
 
 async function bootstrapGame() {
+  applyTheme(loadSavedTheme());
   disablePageScrollGestures();
   applyLanguage(activeLanguage);
   updateOrientationState();
