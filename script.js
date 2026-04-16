@@ -79,18 +79,26 @@ const themeColorByTheme = {
   "fire-water": "#153e75",
   "classic-xo": "#f4f7fb",
 };
+const themeSymbols = {
+  "cloud-star": { X: "☁️", O: "⭐" },
+  "cat-yarn": { X: "🐱", O: "🧶" },
+  "coffee-donut": { X: "☕", O: "🍩" },
+  "sun-moon": { X: "☀️", O: "🌙" },
+  "fire-water": { X: "🔥", O: "💧" },
+  "classic-xo": { X: "X", O: "O" },
+};
 
 const translations = {
   ru: {
     document: {
-      title: "Крестики-нолики",
+      title: "Крестики-Нолики: Новая Эра",
     },
     common: {
       back: "Назад",
     },
     start: {
       eyebrow: "Классическая игра для двоих",
-      title: "Крестики-нолики",
+      title: "Крестики-Нолики: Новая Эра",
       subtitle: "Выбирайте режим и начинайте весёлую партию в обновлённом ярком интерфейсе.",
       cta: "Начать играть",
     },
@@ -171,14 +179,14 @@ const translations = {
   },
   en: {
     document: {
-      title: "Tic-Tac-Toe",
+      title: "Tic-Tac-Toe: New Era",
     },
     common: {
       back: "Back",
     },
     start: {
       eyebrow: "Classic game for two",
-      title: "Tic-Tac-Toe",
+      title: "Tic-Tac-Toe: New Era",
       subtitle: "Choose a mode and jump into a bright, polished match right away.",
       cta: "Start Playing",
     },
@@ -390,6 +398,54 @@ function updateThemeMetaColor(theme) {
   }
 }
 
+function getActiveTheme() {
+  return getSafeTheme(document.body.dataset.theme);
+}
+
+function getDisplaySymbol(symbol, theme = getActiveTheme()) {
+  if (symbol !== "X" && symbol !== "O") {
+    return "";
+  }
+
+  const symbolPair = themeSymbols[getSafeTheme(theme)] ?? themeSymbols[DEFAULT_THEME];
+  return symbolPair[symbol] ?? symbol;
+}
+
+function refreshBoardSymbols(boardEl, state) {
+  if (!boardEl || !Array.isArray(state)) {
+    return;
+  }
+
+  boardEl.querySelectorAll(".cell").forEach((cell) => {
+    const index = Number(cell.dataset.index);
+    setCellValue(cell, state[index] ?? "");
+  });
+}
+
+function getLocalizedSymbolLabel(key, symbol) {
+  const translatedLabel = t(key);
+  return translatedLabel.replace(/\((X|O)\)/, `(${getDisplaySymbol(symbol)})`);
+}
+
+function refreshSymbolLabels() {
+  const scoreXLabel = scoreXText?.previousElementSibling;
+  const scoreOLabel = scoreOText?.previousElementSibling;
+  const botScoreXLabel = botScoreXText?.previousElementSibling;
+  const botScoreOLabel = botScoreOText?.previousElementSibling;
+
+  setTextIfPresent(scoreXLabel, getDisplaySymbol("X"));
+  setTextIfPresent(scoreOLabel, getDisplaySymbol("O"));
+  setTextIfPresent(botScoreXLabel, getLocalizedSymbolLabel("bot.playerScoreLabel", botGame.playerSymbol));
+  setTextIfPresent(botScoreOLabel, getLocalizedSymbolLabel("bot.botScoreLabel", botGame.botSymbol));
+}
+
+function refreshThemeSymbols() {
+  refreshBoardSymbols(board, friendGame.state);
+  refreshBoardSymbols(botBoard, botGame.state);
+  refreshSymbolLabels();
+  refreshCurrentStatuses();
+}
+
 function updateThemeOptions(theme) {
   const activeTheme = getSafeTheme(theme);
 
@@ -406,6 +462,7 @@ function applyTheme(theme, { shouldSave = false } = {}) {
   document.body.dataset.theme = activeTheme;
   updateThemeOptions(activeTheme);
   updateThemeMetaColor(activeTheme);
+  refreshThemeSymbols();
 
   if (shouldSave) {
     saveTheme(activeTheme);
@@ -438,7 +495,8 @@ function setCellValue(cell, value) {
   }
 
   const symbol = value === "X" || value === "O" ? value : "";
-  cell.textContent = symbol;
+  cell.textContent = getDisplaySymbol(symbol);
+  cell.dataset.symbol = symbol;
   cell.classList.toggle("cell-x", symbol === "X");
   cell.classList.toggle("cell-o", symbol === "O");
 }
@@ -479,12 +537,13 @@ function applyStaticTranslations() {
     }
   });
 
+  refreshSymbolLabels();
   updateBoardAriaLabels();
 }
 
 function getFriendTurnStatusPayload(player = friendGame.currentPlayer) {
   return {
-    text: t("status.friendTurn", { symbol: player }),
+    text: t("status.friendTurn", { symbol: getDisplaySymbol(player) }),
     hint: t("hint.makeMove"),
     panelState: "turn",
   };
@@ -492,7 +551,7 @@ function getFriendTurnStatusPayload(player = friendGame.currentPlayer) {
 
 function getFriendWinnerStatusPayload(player) {
   return {
-    text: t("status.friendWinner", { symbol: player }),
+    text: t("status.friendWinner", { symbol: getDisplaySymbol(player) }),
     hint: t("hint.matchFinished"),
     panelState: "win",
   };
@@ -508,7 +567,7 @@ function getDrawStatusPayload({ botMode = false } = {}) {
 
 function getBotPlayerTurnStatusPayload(player = botGame.playerSymbol) {
   return {
-    text: t("status.playerTurn", { symbol: player }),
+    text: t("status.playerTurn", { symbol: getDisplaySymbol(player) }),
     hint: t("hint.makeMove"),
     panelState: "turn",
   };
