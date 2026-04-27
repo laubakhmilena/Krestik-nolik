@@ -299,6 +299,7 @@ let sdkLanguage = null;
 let sdkInitCompleted = false;
 let layoutSyncFrameId = null;
 let stickyBannerSyncPromise = null;
+let viewportSyncFrameId = null;
 
 const clickLockMap = new WeakMap();
 
@@ -694,6 +695,30 @@ function disablePageScrollGestures() {
 
 let orientationFrameId = null;
 let isLandscapeLocked = false;
+
+function getVisualViewportHeight() {
+  const viewport = window.visualViewport;
+  return Math.max(
+    1,
+    Math.floor(viewport?.height ?? window.innerHeight ?? document.documentElement.clientHeight)
+  );
+}
+
+function syncViewportCssVars() {
+  document.documentElement.style.setProperty("--app-height", `${getVisualViewportHeight()}px`);
+}
+
+function scheduleViewportSync() {
+  if (viewportSyncFrameId) {
+    window.cancelAnimationFrame(viewportSyncFrameId);
+  }
+
+  viewportSyncFrameId = window.requestAnimationFrame(() => {
+    viewportSyncFrameId = null;
+    syncViewportCssVars();
+    scheduleAdaptiveLayoutSync();
+  });
+}
 
 function setApplicationInteractivity(isInteractive) {
   if (!appShell) {
@@ -1466,15 +1491,21 @@ function syncBoardSize(contentEl, boardEl) {
 
   const contentChildren = [...contentEl.children].filter((child) => child instanceof HTMLElement);
   const contentStyles = window.getComputedStyle(contentEl);
+  const contentRect = contentEl.getBoundingClientRect();
+  const visualViewportHeight = getVisualViewportHeight();
   const gridColumns = contentStyles.gridTemplateColumns
     .split(" ")
     .map((column) => Number.parseFloat(column))
     .filter((column) => Number.isFinite(column) && column > 0);
   const isLandscapeGameLayout = window.matchMedia?.("(orientation: landscape)").matches && gridColumns.length > 1;
+  const topViewportInset = Math.max(0, Math.floor(contentRect.top));
+  const bottomViewportInset = Math.max(0, Math.floor(visualViewportHeight - contentRect.bottom));
+  const visibleContentHeight = Math.max(0, Math.floor(visualViewportHeight - topViewportInset - bottomViewportInset));
+  const usableContentHeight = Math.max(0, Math.min(Math.floor(contentEl.clientHeight), visibleContentHeight));
 
   if (isLandscapeGameLayout) {
     const maxWidth = Math.max(0, Math.floor(Math.min(gridColumns[0], 370)));
-    const maxHeight = Math.max(0, Math.floor(contentEl.clientHeight));
+    const maxHeight = usableContentHeight;
     const nextBoardSize = Math.max(0, Math.min(maxWidth, maxHeight));
 
     if (nextBoardSize > 0) {
@@ -1489,9 +1520,16 @@ function syncBoardSize(contentEl, boardEl) {
   const rowGap = Number.parseFloat(contentStyles.rowGap) || 0;
   const otherBlocksHeight = contentChildren
     .filter((child) => child !== boardEl)
-    .reduce((sum, child) => sum + child.getBoundingClientRect().height, 0);
+    .reduce((sum, child) => {
+      const childRect = child.getBoundingClientRect();
+      const childStyles = window.getComputedStyle(child);
+      const blockMargins =
+        (Number.parseFloat(childStyles.marginTop) || 0) + (Number.parseFloat(childStyles.marginBottom) || 0);
+
+      return sum + childRect.height + blockMargins;
+    }, 0);
   const gapsHeight = Math.max(0, contentChildren.length - 1) * rowGap;
-  const availableHeight = Math.max(0, Math.floor(contentEl.clientHeight - otherBlocksHeight - gapsHeight));
+  const availableHeight = Math.max(0, Math.floor(usableContentHeight - otherBlocksHeight - gapsHeight));
   const maxWidth = Math.max(0, Math.floor(Math.min(contentEl.clientWidth, 370)));
   const nextBoardSize = Math.max(0, Math.min(maxWidth, availableHeight));
 
@@ -2563,9 +2601,20 @@ exitConfirmModal?.addEventListener("click", (event) => {
   event.stopPropagation();
 });
 
-window.addEventListener("resize", updateOrientationState, { passive: true });
-window.addEventListener("orientationchange", updateOrientationState, { passive: true });
-document.addEventListener("DOMContentLoaded", updateOrientationState, { once: true });
+window.addEventListener("resize", () => {
+  scheduleViewportSync();
+  updateOrientationState();
+}, { passive: true });
+window.addEventListener("orientationchange", () => {
+  scheduleViewportSync();
+  updateOrientationState();
+}, { passive: true });
+window.visualViewport?.addEventListener("resize", scheduleViewportSync, { passive: true });
+window.visualViewport?.addEventListener("scroll", scheduleViewportSync, { passive: true });
+document.addEventListener("DOMContentLoaded", () => {
+  syncViewportCssVars();
+  updateOrientationState();
+}, { once: true });
 document.addEventListener("visibilitychange", handlePageVisibilityChange);
 window.addEventListener("pagehide", () => {
   if (interstitialTimerId) {
@@ -2597,6 +2646,7 @@ async function bootstrapGame() {
   applyTheme(loadSavedTheme());
   disablePageScrollGestures();
   applyLanguage(activeLanguage);
+  syncViewportCssVars();
   updateOrientationState();
   closeExitConfirmModal();
   scheduleAdaptiveLayoutSync();
