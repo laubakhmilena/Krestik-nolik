@@ -46,7 +46,7 @@ const themeOptionButtons = document.querySelectorAll("[data-theme-option]");
 const STORAGE_KEY = "ticTacToeState";
 const THEME_STORAGE_KEY = "ticTacToeTheme";
 const STORAGE_VERSION = 2;
-const YANDEX_SDK_URL = "https://yandex.ru/games/sdk/v2";
+const YANDEX_SDK_URL = "/sdk.js";
 
 const winningLines = [
   [0, 1, 2],
