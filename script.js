@@ -700,12 +700,25 @@ function getVisualViewportHeight() {
   const viewport = window.visualViewport;
   return Math.max(
     1,
-    Math.floor(viewport?.height ?? window.innerHeight ?? document.documentElement.clientHeight)
+    Math.floor(viewport?.height || 0),
+    Math.floor(window.innerHeight || 0),
+    Math.floor(document.documentElement.clientHeight || 0)
+  );
+}
+
+function getVisualViewportWidth() {
+  const viewport = window.visualViewport;
+  return Math.max(
+    1,
+    Math.floor(viewport?.width || 0),
+    Math.floor(window.innerWidth || 0),
+    Math.floor(document.documentElement.clientWidth || 0)
   );
 }
 
 function syncViewportCssVars() {
   document.documentElement.style.setProperty("--app-height", `${getVisualViewportHeight()}px`);
+  document.documentElement.style.setProperty("--app-width", `${getVisualViewportWidth()}px`);
 }
 
 function scheduleViewportSync() {
@@ -1493,6 +1506,7 @@ function syncBoardSize(contentEl, boardEl) {
   const contentStyles = window.getComputedStyle(contentEl);
   const contentRect = contentEl.getBoundingClientRect();
   const visualViewportHeight = getVisualViewportHeight();
+  const visualViewportWidth = getVisualViewportWidth();
   const gridColumns = contentStyles.gridTemplateColumns
     .split(" ")
     .map((column) => Number.parseFloat(column))
@@ -1500,20 +1514,19 @@ function syncBoardSize(contentEl, boardEl) {
   const isLandscapeGameLayout = window.matchMedia?.("(orientation: landscape)").matches && gridColumns.length > 1;
   const topViewportInset = Math.max(0, Math.floor(contentRect.top));
   const bottomViewportInset = Math.max(0, Math.floor(visualViewportHeight - contentRect.bottom));
+  const leftViewportInset = Math.max(0, Math.floor(contentRect.left));
+  const rightViewportInset = Math.max(0, Math.floor(visualViewportWidth - contentRect.right));
   const visibleContentHeight = Math.max(0, Math.floor(visualViewportHeight - topViewportInset - bottomViewportInset));
+  const visibleContentWidth = Math.max(0, Math.floor(visualViewportWidth - leftViewportInset - rightViewportInset));
   const usableContentHeight = Math.max(0, Math.min(Math.floor(contentEl.clientHeight), visibleContentHeight));
+  const usableContentWidth = Math.max(0, Math.min(Math.floor(contentEl.clientWidth), visibleContentWidth));
 
   if (isLandscapeGameLayout) {
-    const maxWidth = Math.max(0, Math.floor(Math.min(gridColumns[0], 370)));
+    const maxWidth = Math.max(0, Math.floor(Math.min(gridColumns[0], usableContentWidth, 370)));
     const maxHeight = usableContentHeight;
     const nextBoardSize = Math.max(0, Math.min(maxWidth, maxHeight));
 
-    if (nextBoardSize > 0) {
-      boardEl.style.setProperty("--board-size", `${nextBoardSize}px`);
-      return;
-    }
-
-    boardEl.style.removeProperty("--board-size");
+    boardEl.style.setProperty("--board-size", `${nextBoardSize}px`);
     return;
   }
 
@@ -1530,15 +1543,10 @@ function syncBoardSize(contentEl, boardEl) {
     }, 0);
   const gapsHeight = Math.max(0, contentChildren.length - 1) * rowGap;
   const availableHeight = Math.max(0, Math.floor(usableContentHeight - otherBlocksHeight - gapsHeight));
-  const maxWidth = Math.max(0, Math.floor(Math.min(contentEl.clientWidth, 370)));
+  const maxWidth = Math.max(0, Math.floor(Math.min(usableContentWidth, 370)));
   const nextBoardSize = Math.max(0, Math.min(maxWidth, availableHeight));
 
-  if (nextBoardSize > 0) {
-    boardEl.style.setProperty("--board-size", `${nextBoardSize}px`);
-    return;
-  }
-
-  boardEl.style.removeProperty("--board-size");
+  boardEl.style.setProperty("--board-size", `${nextBoardSize}px`);
 }
 
 function syncAdaptiveLayout() {
