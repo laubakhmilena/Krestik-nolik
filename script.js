@@ -300,7 +300,7 @@ let sdkInitCompleted = false;
 let layoutSyncFrameId = null;
 let stickyBannerSyncPromise = null;
 let viewportSyncFrameId = null;
-let viewportSyncRetryTimerId = null;
+let viewportSyncRetryTimerIds = [];
 
 const clickLockMap = new WeakMap();
 
@@ -691,7 +691,7 @@ function disablePageScrollGestures() {
   document.addEventListener("wheel", preventScroll, { passive: false });
   document.addEventListener("gesturestart", preventScroll, { passive: false });
   document.addEventListener("gesturechange", preventScroll, { passive: false });
-  document.addEventListener("contextmenu", (event) => event.preventDefault());
+  // document.addEventListener("contextmenu", (event) => event.preventDefault());
 }
 
 let orientationFrameId = null;
@@ -766,15 +766,27 @@ function scheduleViewportRefresh({ repeat = false } = {}) {
     return;
   }
 
-  if (viewportSyncRetryTimerId) {
-    window.clearTimeout(viewportSyncRetryTimerId);
-  }
+  viewportSyncRetryTimerIds.forEach((timerId) => window.clearTimeout(timerId));
+  viewportSyncRetryTimerIds = [];
 
-  viewportSyncRetryTimerId = window.setTimeout(() => {
-    viewportSyncRetryTimerId = null;
+  [80, 180, 360, 700].forEach((delay) => {
+    const timerId = window.setTimeout(() => {
+      viewportSyncRetryTimerIds = viewportSyncRetryTimerIds.filter((id) => id !== timerId);
+      refreshViewportLayout();
+      scheduleViewportSync();
+    }, delay);
+
+    viewportSyncRetryTimerIds.push(timerId);
+  });
+}
+
+function handleFullscreenViewportChange() {
+  scheduleViewportRefresh({ repeat: true });
+
+  window.setTimeout(() => {
     refreshViewportLayout();
     scheduleViewportSync();
-  }, 220);
+  }, 1000);
 }
 
 function setApplicationInteractivity(isInteractive) {
@@ -2660,10 +2672,10 @@ window.addEventListener("orientationchange", () => {
   scheduleViewportRefresh({ repeat: true });
 }, { passive: true });
 document.addEventListener("fullscreenchange", () => {
-  scheduleViewportRefresh({ repeat: true });
+  handleFullscreenViewportChange();
 });
 document.addEventListener("webkitfullscreenchange", () => {
-  scheduleViewportRefresh({ repeat: true });
+  handleFullscreenViewportChange();
 });
 window.visualViewport?.addEventListener("resize", () => {
   scheduleViewportRefresh({ repeat: true });

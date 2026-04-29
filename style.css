@@ -1367,7 +1367,7 @@ body[data-booting="true"] .orientation-overlay {
   }
 }
 
-@media (orientation: landscape) and (min-width: 760px) and (max-height: 820px) {
+@media (orientation: landscape) and (min-width: 460px) and (max-height: 820px) {
   .app-shell {
     padding:
       max(6px, var(--safe-top))
@@ -1489,8 +1489,13 @@ body[data-booting="true"] .orientation-overlay {
 
   .friend-game-content {
     max-width: none;
-    grid-template-columns: minmax(0, 1fr) minmax(220px, 300px);
+    grid-template-columns: minmax(0, 1fr) minmax(180px, min(44vw, 300px));
     grid-template-rows: auto auto auto minmax(0, 1fr);
+    grid-template-areas:
+      "board title"
+      "board status"
+      "board score"
+      "board actions";
     align-items: stretch;
     align-content: center;
     column-gap: clamp(10px, 2.4vmin, 16px);
@@ -1504,11 +1509,16 @@ body[data-booting="true"] .orientation-overlay {
 
   #botGameScreen .friend-game-content {
     grid-template-rows: auto auto auto auto minmax(0, 1fr);
+    grid-template-areas:
+      "board title"
+      "board difficulty"
+      "board status"
+      "board score"
+      "board actions";
   }
 
   .board {
-    grid-column: 1;
-    grid-row: 1 / -1;
+    grid-area: board;
     align-self: center;
     justify-self: center;
     gap: clamp(5px, 1.8vmin, 9px);
@@ -1519,9 +1529,30 @@ body[data-booting="true"] .orientation-overlay {
   .status-panel,
   .score-board,
   .game-actions {
-    grid-column: 2;
     width: 100%;
     max-width: 100%;
+  }
+
+  .game-title {
+    grid-area: title;
+  }
+
+  .difficulty-label {
+    grid-area: difficulty;
+  }
+
+  .status-panel {
+    grid-area: status;
+    align-self: start;
+  }
+
+  .score-board {
+    grid-area: score;
+    align-self: start;
+  }
+
+  .game-actions {
+    grid-area: actions;
   }
 
   .game-title {
@@ -1638,7 +1669,7 @@ body[data-booting="true"] .orientation-overlay {
   }
 
   .friend-game-content {
-    grid-template-columns: minmax(0, 1fr) minmax(208px, 280px);
+    grid-template-columns: minmax(0, 1fr) minmax(170px, min(43vw, 280px));
     column-gap: 8px;
     row-gap: 5px;
   }
@@ -1803,6 +1834,11 @@ body[data-booting="true"] .orientation-overlay {
     padding: 8px 10px;
   }
 
+  .difficulty-label {
+    padding: 3px 7px;
+    font-size: 9px;
+  }
+
   .game-title {
     font-size: clamp(17px, 4vmin, 22px);
   }
@@ -1824,8 +1860,8 @@ body[data-booting="true"] .orientation-overlay {
   }
 
   .game-actions .btn {
-    min-height: 30px;
-    padding: 6px 7px;
+    min-height: 27px;
+    padding: 5px 7px;
     font-size: clamp(10px, 2.4vmin, 12px);
   }
 }
