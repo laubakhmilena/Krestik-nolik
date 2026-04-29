@@ -284,11 +284,10 @@ body {
   position: fixed;
   inset: 0;
   width: var(--app-width, 100vw);
-  height: 100vh;
-  height: max(var(--app-height, 100dvh), 100vh);
-  min-height: 100vh;
-  min-height: max(var(--app-height, 100dvh), 100vh);
-  max-height: none;
+  max-width: var(--app-width, 100vw);
+  height: var(--app-height, 100dvh);
+  min-height: var(--app-height, 100dvh);
+  max-height: var(--app-height, 100dvh);
   touch-action: manipulation;
   background: var(--app-bg);
   transition: background 180ms ease, color 180ms ease;

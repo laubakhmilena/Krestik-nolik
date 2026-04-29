@@ -300,6 +300,7 @@ let sdkInitCompleted = false;
 let layoutSyncFrameId = null;
 let stickyBannerSyncPromise = null;
 let viewportSyncFrameId = null;
+let viewportSyncRetryTimerId = null;
 
 const clickLockMap = new WeakMap();
 
@@ -697,23 +698,37 @@ let orientationFrameId = null;
 let isLandscapeLocked = false;
 
 function getVisualViewportHeight() {
-  const viewport = window.visualViewport;
+  const viewportHeight = Math.floor(window.visualViewport?.height || 0);
+
+  if (shouldPreferVisualViewportSize() && viewportHeight > 0) {
+    return viewportHeight;
+  }
+
   return Math.max(
     1,
-    Math.floor(viewport?.height || 0),
+    viewportHeight,
     Math.floor(window.innerHeight || 0),
     Math.floor(document.documentElement.clientHeight || 0)
   );
 }
 
 function getVisualViewportWidth() {
-  const viewport = window.visualViewport;
+  const viewportWidth = Math.floor(window.visualViewport?.width || 0);
+
+  if (shouldPreferVisualViewportSize() && viewportWidth > 0) {
+    return viewportWidth;
+  }
+
   return Math.max(
     1,
-    Math.floor(viewport?.width || 0),
+    viewportWidth,
     Math.floor(window.innerWidth || 0),
     Math.floor(document.documentElement.clientWidth || 0)
   );
+}
+
+function shouldPreferVisualViewportSize() {
+  return Boolean(window.visualViewport) && (navigator.maxTouchPoints > 0 || /Android|iPhone|iPad|iPod/i.test(navigator.userAgent));
 }
 
 function syncViewportCssVars() {
@@ -731,6 +746,35 @@ function scheduleViewportSync() {
     syncViewportCssVars();
     scheduleAdaptiveLayoutSync();
   });
+}
+
+function refreshViewportLayout() {
+  syncViewportCssVars();
+  updateOrientationState();
+  syncAdaptiveLayout();
+}
+
+function scheduleViewportRefresh({ repeat = false } = {}) {
+  refreshViewportLayout();
+  scheduleViewportSync();
+
+  window.requestAnimationFrame(() => {
+    refreshViewportLayout();
+  });
+
+  if (!repeat) {
+    return;
+  }
+
+  if (viewportSyncRetryTimerId) {
+    window.clearTimeout(viewportSyncRetryTimerId);
+  }
+
+  viewportSyncRetryTimerId = window.setTimeout(() => {
+    viewportSyncRetryTimerId = null;
+    refreshViewportLayout();
+    scheduleViewportSync();
+  }, 220);
 }
 
 function setApplicationInteractivity(isInteractive) {
@@ -1008,7 +1052,7 @@ function resumeGameAfterAd() {
 
   syncPlatformGameplayState();
   syncStickyBannerState();
-  scheduleAdaptiveLayoutSync();
+  scheduleViewportRefresh({ repeat: true });
   saveGameState();
 }
 
@@ -1222,7 +1266,7 @@ function markGameReadyWhenPossible() {
 
 function handlePageVisibilityChange() {
   syncPlatformGameplayState();
-  scheduleAdaptiveLayoutSync();
+  scheduleViewportRefresh({ repeat: true });
 
   if (!document.hidden) {
     syncStickyBannerState();
@@ -2610,20 +2654,31 @@ exitConfirmModal?.addEventListener("click", (event) => {
 });
 
 window.addEventListener("resize", () => {
-  scheduleViewportSync();
-  updateOrientationState();
+  scheduleViewportRefresh({ repeat: true });
 }, { passive: true });
 window.addEventListener("orientationchange", () => {
-  scheduleViewportSync();
-  updateOrientationState();
+  scheduleViewportRefresh({ repeat: true });
 }, { passive: true });
-window.visualViewport?.addEventListener("resize", scheduleViewportSync, { passive: true });
-window.visualViewport?.addEventListener("scroll", scheduleViewportSync, { passive: true });
+document.addEventListener("fullscreenchange", () => {
+  scheduleViewportRefresh({ repeat: true });
+});
+document.addEventListener("webkitfullscreenchange", () => {
+  scheduleViewportRefresh({ repeat: true });
+});
+window.visualViewport?.addEventListener("resize", () => {
+  scheduleViewportRefresh({ repeat: true });
+}, { passive: true });
+window.visualViewport?.addEventListener("scroll", () => {
+  scheduleViewportRefresh();
+}, { passive: true });
 document.addEventListener("DOMContentLoaded", () => {
   syncViewportCssVars();
   updateOrientationState();
 }, { once: true });
 document.addEventListener("visibilitychange", handlePageVisibilityChange);
+window.addEventListener("pageshow", () => {
+  scheduleViewportRefresh({ repeat: true });
+}, { passive: true });
 window.addEventListener("pagehide", () => {
   if (interstitialTimerId) {
     window.clearTimeout(interstitialTimerId);
