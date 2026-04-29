@@ -411,6 +411,15 @@ body[data-booting="true"] .orientation-overlay {
   hyphens: auto;
 }
 
+.start-title {
+  max-width: 430px;
+  font-size: clamp(32px, 7.2vw, 48px);
+  line-height: 1.12;
+  overflow-wrap: normal;
+  word-break: normal;
+  hyphens: manual;
+}
+
 .subtitle {
   margin: 0;
   max-width: 360px;
@@ -1196,6 +1205,10 @@ body[data-booting="true"] .orientation-overlay {
     font-size: clamp(30px, 7vmin, 48px);
   }
 
+  .start-title {
+    font-size: clamp(28px, 6.3vmin, 42px);
+  }
+
   .menu-title {
     font-size: clamp(28px, 6.2vmin, 40px);
   }
@@ -1413,6 +1426,11 @@ body[data-booting="true"] .orientation-overlay {
   .title {
     font-size: clamp(26px, 6.4vmin, 40px);
     line-height: 1.04;
+  }
+
+  .start-title {
+    font-size: clamp(24px, 5.5vmin, 34px);
+    line-height: 1.12;
   }
 
   .subtitle {
