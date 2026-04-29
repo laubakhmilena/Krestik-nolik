@@ -263,8 +263,28 @@ body[data-theme="classic-xo"] {
 * {
   box-sizing: border-box;
   -webkit-tap-highlight-color: transparent;
+}
+
+.app-shell,
+.app-shell *,
+.modal-overlay,
+.modal-overlay *,
+.orientation-overlay,
+.orientation-overlay * {
   -webkit-touch-callout: none;
+  -webkit-user-select: none;
   user-select: none;
+}
+
+input,
+textarea,
+select,
+[contenteditable=""],
+[contenteditable="true"],
+[data-allow-selection] {
+  -webkit-touch-callout: default;
+  -webkit-user-select: text;
+  user-select: text;
 }
 
 html,
@@ -804,6 +824,10 @@ body[data-booting="true"] .orientation-overlay {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: clamp(8px, 1.8vw, 12px);
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+  touch-action: none;
 }
 
 .cell {
@@ -828,6 +852,10 @@ body[data-booting="true"] .orientation-overlay {
   white-space: nowrap;
   overflow: hidden;
   cursor: pointer;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+  touch-action: manipulation;
   transition: box-shadow 100ms ease, background-color 100ms ease, border-color 100ms ease, color 100ms ease,
     filter 100ms ease;
 }

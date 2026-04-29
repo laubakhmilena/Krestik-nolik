@@ -47,6 +47,8 @@ const STORAGE_KEY = "ticTacToeState";
 const THEME_STORAGE_KEY = "ticTacToeTheme";
 const STORAGE_VERSION = 2;
 const YANDEX_SDK_URL = "/sdk.js";
+const NON_SELECTABLE_GAME_AREA_SELECTOR = ".app-shell, .modal-overlay, .orientation-overlay";
+const EDITABLE_TARGET_SELECTOR = "input, textarea, select, [contenteditable], [data-allow-selection]";
 
 const winningLines = [
   [0, 1, 2],
@@ -293,7 +295,6 @@ let lastSavedStateJson = "";
 let isAdPauseActive = false;
 let activeAdType = null;
 let isInterstitialPending = false;
-let interstitialTimerId = null;
 let activeLanguage = getFallbackLanguage();
 let sdkLanguage = null;
 let sdkInitCompleted = false;
@@ -691,7 +692,36 @@ function disablePageScrollGestures() {
   document.addEventListener("wheel", preventScroll, { passive: false });
   document.addEventListener("gesturestart", preventScroll, { passive: false });
   document.addEventListener("gesturechange", preventScroll, { passive: false });
-  // document.addEventListener("contextmenu", (event) => event.preventDefault());
+}
+
+function getEventElement(eventTarget) {
+  if (eventTarget instanceof Element) {
+    return eventTarget;
+  }
+
+  return eventTarget instanceof Node ? eventTarget.parentElement : null;
+}
+
+function isEditableTarget(eventTarget) {
+  return Boolean(getEventElement(eventTarget)?.closest(EDITABLE_TARGET_SELECTOR));
+}
+
+function isInsideGameArea(eventTarget) {
+  return Boolean(getEventElement(eventTarget)?.closest(NON_SELECTABLE_GAME_AREA_SELECTOR));
+}
+
+function suppressNativeGameAreaSelection(event) {
+  if (!isInsideGameArea(event.target) || isEditableTarget(event.target)) {
+    return;
+  }
+
+  event.preventDefault();
+}
+
+function installNativeSelectionGuards() {
+  ["contextmenu", "selectstart", "dragstart"].forEach((eventName) => {
+    document.addEventListener(eventName, suppressNativeGameAreaSelection, { capture: true });
+  });
 }
 
 let orientationFrameId = null;
@@ -1131,28 +1161,9 @@ async function runAfterUserActionInterstitial(reason, action) {
   action?.();
 }
 
-function recordFinishedMatchAndMaybeShowAd() {
+function recordFinishedMatchForInterstitial() {
   monetizationState.finishedMatchesSinceLastInterstitial += 1;
   saveGameState();
-
-  if (interstitialTimerId) {
-    window.clearTimeout(interstitialTimerId);
-    interstitialTimerId = null;
-  }
-
-  if (!canShowInterstitialNow()) {
-    return;
-  }
-
-  interstitialTimerId = window.setTimeout(() => {
-    interstitialTimerId = null;
-
-    if (!canShowInterstitialNow()) {
-      return;
-    }
-
-    showInterstitialAd("after-match");
-  }, 80);
 }
 
 function isGameScreenActive() {
@@ -2058,7 +2069,7 @@ function finishFriendGame({ winnerSymbol = null, isDraw = false, line = null } =
   scheduleAdaptiveLayoutSync();
   syncPlatformGameplayState();
   saveGameState();
-  recordFinishedMatchAndMaybeShowAd();
+  recordFinishedMatchForInterstitial();
 }
 
 function handleFriendCellClick(event) {
@@ -2324,7 +2335,7 @@ function finishBotGame({ winner = null, isDraw = false, line = null } = {}) {
   scheduleAdaptiveLayoutSync();
   syncPlatformGameplayState();
   saveGameState();
-  recordFinishedMatchAndMaybeShowAd();
+  recordFinishedMatchForInterstitial();
 }
 
 
@@ -2631,8 +2642,15 @@ bindAction(botChangeDifficultyBtn, () => {
   return runAfterUserActionInterstitial("change-difficulty", () => leaveGameTo(botDifficultyScreen));
 });
 
-bindAction(restartBtn, resetFriendBoard);
-bindAction(botRestartBtn, () => resetBotBoard({ keepStarter: false }));
+bindAction(restartBtn, async () => {
+  await showInterstitialAd("play-again");
+  resetFriendBoard();
+});
+
+bindAction(botRestartBtn, async () => {
+  await showInterstitialAd("play-again");
+  resetBotBoard({ keepStarter: false });
+});
 bindAction(resetScoreBtn, resetFriendScores);
 bindAction(botResetScoreBtn, resetBotScores);
 
@@ -2692,11 +2710,6 @@ window.addEventListener("pageshow", () => {
   scheduleViewportRefresh({ repeat: true });
 }, { passive: true });
 window.addEventListener("pagehide", () => {
-  if (interstitialTimerId) {
-    window.clearTimeout(interstitialTimerId);
-    interstitialTimerId = null;
-  }
-
   try {
     getAdvertisementApi()?.hideBannerAdv?.();
   } catch (error) {
@@ -2720,6 +2733,7 @@ window.addEventListener("pagehide", () => {
 async function bootstrapGame() {
   applyTheme(loadSavedTheme());
   disablePageScrollGestures();
+  installNativeSelectionGuards();
   applyLanguage(activeLanguage);
   syncViewportCssVars();
   updateOrientationState();
