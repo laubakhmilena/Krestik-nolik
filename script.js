@@ -303,6 +303,8 @@ let sdkLanguage = null;
 let sdkInitCompleted = false;
 let layoutSyncFrameId = null;
 let stickyBannerSyncPromise = null;
+let stickyBannerSyncQueued = false;
+let stickyBannerIsShowing = false;
 let viewportSyncFrameId = null;
 let viewportSyncRetryTimerIds = [];
 
@@ -1009,27 +1011,50 @@ function getAdvertisementApi() {
   return yandexGamesSdk?.features?.AdvertisementAPI ?? yandexGamesSdk?.adv ?? null;
 }
 
+function shouldStickyBannerBeVisible() {
+  if (document.hidden || isShowingScreen || isModalOpen || isLandscapeLocked || isAdPauseActive || isInterstitialPending) {
+    return false;
+  }
+
+  const activeScreenId = getActiveScreenId();
+  return activeScreenId === "startScreen" || activeScreenId === "menuScreen" || activeScreenId === "botDifficultyScreen";
+}
+
 async function syncStickyBannerState() {
   const adApi = getAdvertisementApi();
-  if (!adApi?.getBannerAdvStatus || !adApi?.hideBannerAdv) {
+  if (!adApi?.getBannerAdvStatus) {
     return;
   }
 
   if (stickyBannerSyncPromise) {
+    stickyBannerSyncQueued = true;
     return stickyBannerSyncPromise;
   }
 
   stickyBannerSyncPromise = (async () => {
     try {
+      const shouldShow = shouldStickyBannerBeVisible();
       const bannerStatus = await adApi.getBannerAdvStatus();
+      stickyBannerIsShowing = Boolean(bannerStatus?.stickyAdvIsShowing);
 
-      if (bannerStatus?.stickyAdvIsShowing) {
+      if (shouldShow && !stickyBannerIsShowing && adApi.showBannerAdv) {
+        await adApi.showBannerAdv();
+        stickyBannerIsShowing = true;
+        return;
+      }
+
+      if (!shouldShow && stickyBannerIsShowing && adApi.hideBannerAdv) {
         await adApi.hideBannerAdv();
+        stickyBannerIsShowing = false;
       }
     } catch (error) {
       console.warn("Не удалось синхронизировать sticky-баннер.", error);
     } finally {
       stickyBannerSyncPromise = null;
+      if (stickyBannerSyncQueued) {
+        stickyBannerSyncQueued = false;
+        syncStickyBannerState();
+      }
     }
   })();
 
@@ -1316,11 +1341,8 @@ function markGameReadyWhenPossible() {
 
 function handlePageVisibilityChange() {
   syncPlatformGameplayState();
+  syncStickyBannerState();
   scheduleViewportRefresh({ repeat: true });
-
-  if (!document.hidden) {
-    syncStickyBannerState();
-  }
 
   if (document.hidden && botGame.turn === "bot") {
     botGame.shouldResumeBotMove = !botGame.isFinished;
@@ -1450,6 +1472,7 @@ function closeExitConfirmModal({ keepPendingTarget = false, resumeGameplay = tru
 
   if (resumeGameplay) {
     syncPlatformGameplayState();
+    syncStickyBannerState();
     resumeBotTurnIfNeeded();
   }
 }
@@ -1477,6 +1500,7 @@ function openExitConfirmModal(targetScreen) {
   botGame.shouldResumeBotMove = botGame.turn === "bot" && !botGame.isFinished;
   scheduleAdaptiveLayoutSync();
   syncPlatformGameplayState();
+  syncStickyBannerState();
   saveGameState();
 }
 
@@ -1781,12 +1805,6 @@ function normalizeBotGameState(rawBotState) {
   };
 }
 
-function normalizeScreenState(activeScreen) {
-  return ["startScreen", "menuScreen", "botDifficultyScreen", "friendGameScreen", "botGameScreen"].includes(activeScreen)
-    ? activeScreen
-    : "startScreen";
-}
-
 function normalizeMonetizationState(rawMonetizationState) {
   return {
     finishedMatchesSinceLastInterstitial: getSafeScore(rawMonetizationState?.finishedMatchesSinceLastInterstitial),
@@ -1948,7 +1966,6 @@ function restoreGameState(state) {
   const normalizedFriendGame = normalizeFriendGameState(safeState.friendGame);
   const normalizedBotGame = normalizeBotGameState(safeState.botGame);
   const normalizedMonetization = normalizeMonetizationState(safeState.monetization);
-  const safeActiveScreen = normalizeScreenState(safeState.activeScreen);
 
   friendGame.scores = normalizedFriendGame.scores;
   refreshFriendScores();
@@ -2015,15 +2032,7 @@ function restoreGameState(state) {
 
   closeExitConfirmModal({ keepPendingTarget: false });
 
-  const screenById = {
-    startScreen,
-    menuScreen,
-    botDifficultyScreen,
-    friendGameScreen,
-    botGameScreen,
-  };
-
-  showScreen(screenById[safeActiveScreen] ?? startScreen);
+  showScreen(startScreen);
 
   botGame.shouldResumeBotMove = !botGame.isFinished && botGame.turn === "bot";
   botGame.isBotThinking = false;
@@ -2739,6 +2748,7 @@ window.addEventListener("pageshow", () => {
 window.addEventListener("pagehide", () => {
   try {
     getAdvertisementApi()?.hideBannerAdv?.();
+    stickyBannerIsShowing = false;
   } catch (error) {
     console.warn("Не удалось скрыть sticky-баннер при закрытии страницы", error);
   }
