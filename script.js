@@ -291,6 +291,7 @@ let gameReadySent = false;
 let gameReadyPending = false;
 let gameReadyInFlight = false;
 let gameReadyRetryTimerId = null;
+let bootRevealCompleted = false;
 let gameplayDesiredActive = false;
 let gameplayPlatformActive = false;
 let lastSavedStateJson = "";
@@ -674,6 +675,19 @@ function applyPlatformLanguageBeforeReady() {
 
 function markBootComplete() {
   document.body?.removeAttribute("data-booting");
+}
+
+function revealGameInterface() {
+  if (bootRevealCompleted) {
+    return;
+  }
+
+  bootRevealCompleted = true;
+  markBootComplete();
+  updateOrientationState();
+  syncPlatformGameplayState();
+  syncStickyBannerState();
+  scheduleAdaptiveLayoutSync();
 }
 
 function disablePageScrollGestures() {
@@ -1195,6 +1209,7 @@ function shouldGameplayBeActive() {
   return (
     isGameScreenActive() &&
     isGameplayMatchActive() &&
+    bootRevealCompleted &&
     !document.hidden &&
     !isAdPauseActive &&
     !isModalOpen &&
@@ -1260,12 +1275,16 @@ function markGameReadyWhenPossible() {
 
   if (!sdkInitialized || !yandexGamesSdk) {
     gameReadyPending = !sdkInitCompleted;
+    if (sdkInitCompleted) {
+      revealGameInterface();
+    }
     return;
   }
 
   const loadingApi = sdkInitialized ? yandexGamesSdk?.features?.LoadingAPI : null;
   if (!loadingApi?.ready) {
     gameReadyPending = false;
+    revealGameInterface();
     return;
   }
 
@@ -1278,6 +1297,7 @@ function markGameReadyWhenPossible() {
     .then(() => {
       gameReadySent = true;
       gameReadyPending = false;
+      revealGameInterface();
     })
     .catch((error) => {
       console.warn("Не удалось вызвать LoadingAPI.ready()", error);
@@ -2770,8 +2790,6 @@ async function bootstrapGame() {
     saveGameState();
   }
 
-  markBootComplete();
-
   // Дожидаемся завершения первого кадра после восстановления UI
   // и только затем сообщаем платформе о готовности игры.
   window.requestAnimationFrame(() => {
@@ -2779,7 +2797,6 @@ async function bootstrapGame() {
     syncPlatformGameplayState();
     syncStickyBannerState();
     scheduleAdaptiveLayoutSync();
-    markBootComplete();
     markGameReadyWhenPossible();
   });
 }
