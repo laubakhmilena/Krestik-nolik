@@ -70,6 +70,8 @@ const difficultyMeta = {
   hard: { translationKey: "difficulty.hard" },
 };
 const DEFAULT_THEME = "sun-moon";
+const DEFAULT_LANGUAGE = "ru";
+const FALLBACK_LANGUAGE = "en";
 const availableThemes = new Set(["cloud-star", "cat-yarn", "coffee-donut", DEFAULT_THEME, "fire-water", "classic-xo"]);
 const themeColorByTheme = {
   "cloud-star": "#dff5ff",
@@ -255,7 +257,7 @@ const translations = {
   },
 };
 
-function resolveLanguage(rawLanguage) {
+function resolveLanguage(rawLanguage, fallbackLanguage = DEFAULT_LANGUAGE) {
   const normalized = String(rawLanguage ?? "").trim().toLowerCase();
 
   if (normalized.startsWith("en")) {
@@ -266,7 +268,7 @@ function resolveLanguage(rawLanguage) {
     return "ru";
   }
 
-  return "ru";
+  return translations[fallbackLanguage] ? fallbackLanguage : DEFAULT_LANGUAGE;
 }
 
 function getFallbackLanguage() {
@@ -274,7 +276,7 @@ function getFallbackLanguage() {
     return resolveLanguage(document.documentElement.lang);
   }
 
-  return resolveLanguage(navigator.languages?.[0] ?? navigator.language ?? document.documentElement.lang);
+  return resolveLanguage(navigator.languages?.[0] ?? navigator.language ?? document.documentElement.lang, FALLBACK_LANGUAGE);
 }
 
 let pendingExitTarget = null;
@@ -658,8 +660,16 @@ function detectAndApplySdkLanguage(sdk) {
     return;
   }
 
-  sdkLanguage = resolveLanguage(environmentLanguage);
+  sdkLanguage = resolveLanguage(environmentLanguage, FALLBACK_LANGUAGE);
   applyLanguage(sdkLanguage);
+}
+
+function applyPlatformLanguageBeforeReady() {
+  if (!sdkInitialized || !yandexGamesSdk) {
+    return;
+  }
+
+  detectAndApplySdkLanguage(yandexGamesSdk);
 }
 
 function markBootComplete() {
@@ -884,6 +894,14 @@ function ensureYandexSdkScript() {
     return Promise.resolve(true);
   }
 
+  if (window.__YANDEX_GAMES_SDK_SCRIPT_FAILED__) {
+    return Promise.resolve(false);
+  }
+
+  if (window.__YANDEX_GAMES_SDK_SCRIPT_READY__) {
+    return Promise.resolve(Boolean(window.YaGames?.init));
+  }
+
   if (sdkScriptLoadPromise) {
     return sdkScriptLoadPromise;
   }
@@ -921,19 +939,7 @@ function ensureYandexSdkScript() {
       return;
     }
 
-    const sdkScript = document.createElement("script");
-    sdkScript.src = YANDEX_SDK_URL;
-    sdkScript.async = true;
-    sdkScript.onload = () => {
-      sdkScript.dataset.sdkLoadState = "loaded";
-      resolve(Boolean(window.YaGames?.init));
-    };
-    sdkScript.onerror = () => {
-      sdkScript.dataset.sdkLoadState = "error";
-      console.warn("Не удалось загрузить SDK Яндекс Игр, продолжаем без платформенных API.");
-      resolve(false);
-    };
-    document.head.appendChild(sdkScript);
+    resolve(false);
   });
 
   return sdkScriptLoadPromise;
@@ -1263,6 +1269,7 @@ function markGameReadyWhenPossible() {
     return;
   }
 
+  applyPlatformLanguageBeforeReady();
   gameReadyPending = false;
   gameReadyInFlight = true;
 
