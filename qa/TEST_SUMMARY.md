@@ -1,42 +1,71 @@
-name: Playwright E2E
+# Отчёт о тестировании
 
-on:
-  push:
-    branches: ["main"]
-  pull_request:
-    branches: ["main"]
-  workflow_dispatch:
+## Статус
 
-permissions:
-  contents: read
+**Этап:** QA-портфолио и статический анализ  
+**Дата:** 16 июля 2026 года  
+**Ветка:** `main`  
+**Динамический прогон:** не выполнялся  
+**Итог:** документация и smoke-набор подготовлены; дефекты требуют воспроизведения.
 
-jobs:
-  test:
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
+## Выполнено
 
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v5
+- анализ структуры интерфейса;
+- выделение состояний;
+- определение критичных потоков;
+- тест-план;
+- функциональный и нефункциональный чек-лист;
+- 22 тест-кейса;
+- матрица трассируемости;
+- 5 кандидатов на дефекты;
+- Playwright smoke/regression;
+- GitHub Actions;
+- Issue Form.
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v6
-        with:
-          node-version: "lts/*"
+## Покрытие
 
-      - name: Install dependencies
-        run: npm install
+| Область | Уровень |
+|---|---|
+| Start и Menu | Высокий |
+| Friend mode | Высокий |
+| Win/draw | Высокий |
+| Score | Высокий |
+| Exit modal | Высокий |
+| Bot mode | Средний |
+| Themes | Высокий |
+| Localization | Средний |
+| Responsive | Средний |
+| Accessibility | Средний |
+| SDK | Низкий/средний |
 
-      - name: Install Chromium
-        run: npx playwright install chromium --with-deps
+## Статистика
 
-      - name: Run tests
-        run: npm test
+| Метрика | Значение |
+|---|---:|
+| Разделов чек-листа | 9 |
+| Проверок | 100+ |
+| Тест-кейсов | 22 |
+| Кандидатов на дефекты | 5 |
+| Автотестов | 10 |
+| Требований в матрице | 24 |
 
-      - name: Upload report
-        if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@v5
-        with:
-          name: playwright-report
-          path: playwright-report/
-          retention-days: 14
+## Severity
+
+| Severity | Количество |
+|---|---:|
+| Blocker | 0 |
+| Critical | 0 |
+| Major | 3 |
+| Minor | 2 |
+
+Все дефекты имеют статус `Needs validation`.
+
+## Рекомендации
+
+- выполнить ручной прогон Chrome и Firefox;
+- подтвердить/отклонить дефекты;
+- добавить скриншоты;
+- включить GitHub Pages;
+- добавить live demo;
+- приложить HTML-отчёт Playwright;
+- включить branch protection после CI.
