@@ -1,0 +1,17 @@
+# Changelog
+
+## QA portfolio update — 2026-07-16
+
+### Added
+
+- профессиональный README;
+- тест-план;
+- чек-лист;
+- 22 тест-кейса;
+- 5 кандидатов на дефекты;
+- матрица трассируемости;
+- итоговый отчёт;
+- Playwright UI tests;
+- GitHub Actions;
+- GitHub Issue Form;
+- `.gitignore`.
