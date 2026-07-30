@@ -1,17 +1,23 @@
-# Changelog
-
-## QA portfolio update — 2026-07-16
-
-### Added
-
-- профессиональный README;
-- тест-план;
-- чек-лист;
-- 22 тест-кейса;
-- 5 кандидатов на дефекты;
-- матрица трассируемости;
-- итоговый отчёт;
-- Playwright UI tests;
-- GitHub Actions;
-- GitHub Issue Form;
-- `.gitignore`.
+{
+  "name": "krestik-nolik-new-era",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Browser tic-tac-toe game built with HTML, CSS and JavaScript.",
+  "scripts": {
+    "dev": "node scripts/static-server.js",
+    "build": "npm run check",
+    "preview": "node scripts/static-server.js",
+    "check": "node scripts/check-structure.js && node --check script.js",
+    "test": "playwright test",
+    "test:e2e": "playwright test",
+    "test:headed": "playwright test --headed",
+    "test:report": "playwright show-report",
+    "verify": "npm run check && npm test && npm run build"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.52.0"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

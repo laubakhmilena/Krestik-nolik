@@ -1,21 +1,27 @@
-# Как применить файлы
+const { defineConfig, devices } = require("@playwright/test");
 
-1. Распакуйте архив.
-2. Скопируйте содержимое папки в корень `Krestik-nolik`.
-3. Подтвердите замену `README.md`.
-4. Исходные `index.html`, `script.js`, `style.css` не заменяются.
-5. Выполните:
-
-```bash
-npm install
-npx playwright install chromium
-npm test
-```
-
-6. Затем:
-
-```bash
-git add .
-git commit -m "Add QA portfolio documentation and Playwright tests"
-git push
-```
+module.exports = defineConfig({
+  testDir: "./tests/e2e",
+  fullyParallel: true,
+  forbidOnly: Boolean(process.env.CI),
+  retries: process.env.CI ? 2 : 0,
+  workers: process.env.CI ? 1 : undefined,
+  reporter: [["list"], ["html", { outputFolder: "playwright-report", open: "never" }]],
+  use: {
+    baseURL: "http://127.0.0.1:4173",
+    trace: "on-first-retry",
+    screenshot: "only-on-failure",
+    video: "retain-on-failure",
+  },
+  webServer: {
+    command: "node scripts/static-server.js --port 4173",
+    url: "http://127.0.0.1:4173",
+    reuseExistingServer: !process.env.CI,
+    timeout: 30000,
+    gracefulShutdown: { signal: "SIGINT", timeout: 1000 },
+  },
+  projects: [
+    { name: "chromium-desktop", use: { ...devices["Desktop Chrome"] } },
+    { name: "mobile-chrome", use: { ...devices["Pixel 7"] } },
+  ],
+});
